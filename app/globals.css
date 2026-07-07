@@ -8,29 +8,29 @@
   --color-primary: #4F46E5;
   --color-primary-hover: #4338CA;
   --color-secondary: #10B981;
-  --color-panel-bg: #121214;
-  --color-panel-border: rgba(255, 255, 255, 0.06);
+  --color-panel-bg: #ffffff;
+  --color-panel-border: rgba(0, 0, 0, 0.08);
   --color-chat-user: #4F46E5;
-  --color-chat-other: rgba(255, 255, 255, 0.04);
+  --color-chat-other: #f3f4f6;
 
   --radius-panel: 32px;
   --radius-element: 20px;
 }
 
 :root {
-  --gradient-bg: radial-gradient(circle at top right, rgba(79, 70, 229, 0.06) 0%, transparent 60%), #0A0A0C;
-  --accent-glow: radial-gradient(circle at 80% 20%, rgba(79, 70, 229, 0.08) 0%, transparent 50%);
-  --panel-bg: #121214;
-  --panel-border: rgba(255, 255, 255, 0.06);
-  --text-primary: #E0E0E6;
-  --text-secondary: #9CA3AF;
+  --gradient-bg: radial-gradient(circle at top right, rgba(79, 70, 229, 0.04) 0%, transparent 60%), #fafafa;
+  --accent-glow: radial-gradient(circle at 80% 20%, rgba(79, 70, 229, 0.05) 0%, transparent 50%);
+  --panel-bg: #ffffff;
+  --panel-border: rgba(0, 0, 0, 0.08);
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
   
   --chat-bg-user: #4F46E5;
   --chat-text-user: #FFFFFF;
-  --chat-bg-other: rgba(255, 255, 255, 0.04);
-  --chat-text-other: #E0E0E6;
+  --chat-bg-other: #f3f4f6;
+  --chat-text-other: #111827;
 
-  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
   --radius-panel: 32px;
   --radius-element: 20px;
   --radius-bubble-user: 24px 24px 4px 24px;
@@ -77,12 +77,12 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Chat bubble shapes */
@@ -90,14 +90,14 @@ body::before {
   background-color: var(--chat-bg-user);
   color: var(--chat-text-user);
   border-radius: var(--radius-bubble-user);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
 }
 
 .bubble-other {
   background-color: var(--chat-bg-other);
   color: var(--chat-text-other);
   border-radius: var(--radius-bubble-other);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* Subtle pulse animation for active indicator */

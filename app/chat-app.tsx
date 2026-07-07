@@ -11,8 +11,7 @@ import {
   serverTimestamp,
   get
 } from 'firebase/database';
-import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Send, 
@@ -43,38 +42,9 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+  const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // 1. Connection Validation on Boot
-  useEffect(() => {
-    async function testConnection() {
-      try {
-        await get(ref(db, 'test/connection'));
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    }
-    testConnection();
-  }, []);
-
-  // 2. Auth State and Saved Username Tracking
-  useEffect(() => {
-    const savedName = localStorage.getItem('surabaya_chat_username');
-    if (savedName) {
-      // Intentionally not setting state here to avoid cascading effect
-    }
-
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuthReady(true);
-      }
-    });
-
-    return () => unsubscribeAuth();
-  }, []);
 
   // Hydrate username after mount
   useEffect(() => {
@@ -87,8 +57,6 @@ export default function HomePage() {
 
   // 3. Real-time Messages Subscription
   useEffect(() => {
-    if (!isAuthReady) return;
-
     const q = query(
       ref(db, 'global_messages'), 
       orderByChild('timestamp'), 
@@ -123,7 +91,7 @@ export default function HomePage() {
     );
 
     return () => unsubscribe();
-  }, [isAuthReady]);
+  }, []);
 
   // Scroll to bottom whenever messages list changes
   useEffect(() => {
@@ -172,13 +140,20 @@ export default function HomePage() {
   };
 
   const handleExitChat = () => {
-    if (confirm("Apakah Anda yakin ingin keluar dari chat?")) {
-      setUsername('');
-      setIsNameSet(false);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('surabaya_chat_username');
-      }
+    setShowExitConfirm(true);
+  };
+
+  const confirmExitChat = () => {
+    setUsername('');
+    setIsNameSet(false);
+    setShowExitConfirm(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('surabaya_chat_username');
     }
+  };
+
+  const cancelExitChat = () => {
+    setShowExitConfirm(false);
   };
 
   // Format message timestamp
@@ -214,17 +189,17 @@ export default function HomePage() {
               </div>
 
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                   Surabaya Community
                 </h1>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   Bergabung ke Shared Chat Room
                 </p>
               </div>
 
               <form onSubmit={handleJoinChat} className="w-full space-y-4">
                 <div className="space-y-1.5 text-left">
-                  <label htmlFor="name-input" className="text-xs font-semibold uppercase tracking-wider text-gray-400 block ml-1">
+                  <label htmlFor="name-input" className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
                     Nama / Nickname Anda
                   </label>
                   <div className="relative">
@@ -239,7 +214,7 @@ export default function HomePage() {
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       maxLength={30}
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -253,7 +228,7 @@ export default function HomePage() {
                 </button>
               </form>
 
-              <div className="pt-2 border-t border-white/5 w-full flex items-center justify-center gap-1.5 text-xs text-gray-500">
+              <div className="pt-2 border-t border-gray-200 w-full flex items-center justify-center gap-1.5 text-xs text-gray-500">
                 <ShieldAlert size={14} className="text-emerald-500/80" />
                 <span>Diproteksi dengan sistem moderasi aktif</span>
               </div>
@@ -270,16 +245,16 @@ export default function HomePage() {
             className="w-full max-w-2xl h-[85vh] flex flex-col glass-panel overflow-hidden relative"
           >
             {/* Main Header */}
-            <header className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+            <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
                   <MessageSquare size={20} className="stroke-[2]" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-white tracking-wide text-sm md:text-base">
+                  <h2 className="font-bold text-gray-900 tracking-wide text-sm md:text-base">
                     Surabaya Community Live Chat
                   </h2>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator inline-block" />
                     <span>{activeUsersCount} Anggota Aktif</span>
                   </div>
@@ -290,7 +265,7 @@ export default function HomePage() {
                 <button
                   onClick={handleExitChat}
                   title="Keluar dari Obrolan"
-                  className="p-2 hover:bg-white/5 text-gray-400 hover:text-red-400 rounded-lg transition-colors duration-200 flex items-center gap-1.5 text-xs"
+                  className="p-2 hover:bg-gray-100 text-gray-500 hover:text-red-500 rounded-lg transition-colors duration-200 flex items-center gap-1.5 text-xs"
                 >
                   <LogOut size={16} />
                   <span className="hidden sm:inline">Keluar</span>
@@ -323,10 +298,10 @@ export default function HomePage() {
                     >
                       {/* Name Label */}
                       {!isMe && (
-                        <span className="text-xs font-semibold text-gray-400 mb-1 ml-1 flex items-center gap-1">
+                        <span className="text-xs font-semibold text-gray-600 mb-1 ml-1 flex items-center gap-1">
                           {msg.username}
                           {isAdminMsg && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase tracking-wider">
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
                               ADMIN
                             </span>
                           )}
@@ -346,7 +321,7 @@ export default function HomePage() {
                             isMe 
                               ? 'bubble-user' 
                               : isAdminMsg 
-                                ? 'bg-amber-950/20 text-amber-100 border border-amber-500/20 rounded-xl'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl'
                                 : 'bubble-other'
                           }`}
                         >
@@ -370,7 +345,7 @@ export default function HomePage() {
             </div>
 
             {/* Input Form Footer */}
-            <footer className="p-4 border-t border-white/10 bg-white/[0.01]">
+            <footer className="p-4 border-t border-gray-200 bg-white">
               <form onSubmit={handleSendMessage} className="flex gap-2.5">
                 <input
                   type="text"
@@ -379,7 +354,7 @@ export default function HomePage() {
                   placeholder={`Menulis sebagai ${username}...`}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                 />
                 <button
                   type="submit"
@@ -390,6 +365,46 @@ export default function HomePage() {
                 </button>
               </form>
             </footer>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm glass-panel p-6 relative overflow-hidden flex flex-col items-center text-center space-y-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
+                <LogOut size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Keluar dari Obrolan?</h3>
+                <p className="text-sm text-gray-500 mt-1">Anda akan meninggalkan ruang obrolan saat ini. Apakah Anda yakin?</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={cancelExitChat}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmExitChat}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm"
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

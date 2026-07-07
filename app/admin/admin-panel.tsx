@@ -13,8 +13,8 @@ import {
   get,
   serverTimestamp 
 } from 'firebase/database';
-import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Trash2, 
   Send, 
@@ -46,8 +46,9 @@ export default function AdminPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(true);
   const [adminMessage, setAdminMessage] = useState<string>('');
-  const [authReady, setAuthReady] = useState<boolean>(false);
   const [adminName, setAdminName] = useState<string>('Admin Support');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   
   // Analytics
   const [userStats, setUserStats] = useState<{ total: number; users: number; admins: number }>({
@@ -58,35 +59,18 @@ export default function AdminPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 1. Authenticate with firebase auth and verify if session exists
+  // 1. Check local storage for admin session
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setAuthReady(true);
-        try {
-          // Check if active session already exists in Realtime Database
-          const sessionRef = ref(db, `admin_sessions/${user.uid}`);
-          const docSnap = await get(sessionRef);
-          if (docSnap.exists() && docSnap.val().password === 'pemkot2026') {
-            setIsAdminLoggedIn(true);
-          }
-        } catch (e) {
-          // Session doesn't exist or is invalid, prompt login
-          console.log("No valid admin session found");
-        } finally {
-          setIsVerifying(false);
-        }
-      } else {
-        setIsVerifying(false);
-      }
-    });
-
-    return () => unsubscribeAuth();
+    const adminSession = localStorage.getItem('surabaya_admin_session');
+    if (adminSession === 'pemkot2026') {
+      setIsAdminLoggedIn(true);
+    }
+    setIsVerifying(false);
   }, []);
 
   // 2. Real-time Messages Listener (Only for logged-in admins)
   useEffect(() => {
-    if (!isAdminLoggedIn || !authReady) return;
+    if (!isAdminLoggedIn) return;
 
     const q = query(
       ref(db, 'global_messages'), 
@@ -136,7 +120,7 @@ export default function AdminPage() {
     );
 
     return () => unsubscribe();
-  }, [isAdminLoggedIn, authReady]);
+  }, [isAdminLoggedIn]);
 
   // Scroll to bottom whenever messages list changes
   useEffect(() => {
@@ -146,55 +130,54 @@ export default function AdminPage() {
   // Handle Login submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) {
-      alert("Autentikasi sedang diinisialisasi. Silakan tunggu sebentar.");
-      return;
-    }
 
     setIsVerifying(true);
-    try {
-      // Secure write to admin_sessions. It will only succeed if password matches in rules.
-      await set(ref(db, `admin_sessions/${auth.currentUser.uid}`), {
-        password: password,
-        timestamp: serverTimestamp()
-      });
-
+    if (password === 'pemkot2026') {
+      localStorage.setItem('surabaya_admin_session', password);
       setIsAdminLoggedIn(true);
-    } catch (error: any) {
-      console.error(error);
+    } else {
       alert("Sandi Moderasi Salah! Hanya admin Surabaya Community yang memiliki akses.");
-    } finally {
-      setIsVerifying(false);
     }
+    setIsVerifying(false);
   };
 
   // Handle Logout submission
-  const handleLogout = async () => {
-    if (confirm("Apakah Anda yakin ingin keluar dari panel admin?")) {
-      setIsVerifying(true);
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          await remove(ref(db, `admin_sessions/${user.uid}`));
-        } catch (e) {
-          console.error("Error clearing session:", e);
-        }
-      }
-      setIsAdminLoggedIn(false);
-      setPassword('');
-      setIsVerifying(false);
-    }
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsVerifying(true);
+    localStorage.removeItem('surabaya_admin_session');
+    setIsAdminLoggedIn(false);
+    setPassword('');
+    setShowLogoutConfirm(false);
+    setIsVerifying(false);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   // Delete message handler
-  const handleDeleteMessage = async (msgId: string) => {
-    if (confirm("Hapus pesan ini dari room publik? Tindakan ini tidak bisa dibatalkan.")) {
+  const handleDeleteMessage = (msgId: string) => {
+    setShowDeleteConfirm(msgId);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (showDeleteConfirm) {
+      const msgId = showDeleteConfirm;
+      setShowDeleteConfirm(null);
       try {
         await remove(ref(db, `global_messages/${msgId}`));
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, `global_messages/${msgId}`);
       }
     }
+  };
+
+  const cancelDeleteMessage = () => {
+    setShowDeleteConfirm(null);
   };
 
   // Send admin message handler
@@ -240,7 +223,7 @@ export default function AdminPage() {
           /* INITIAL LOADING STATE */
           <div key="loading" className="flex-1 flex flex-col items-center justify-center space-y-4 min-h-screen">
             <div className="w-10 h-10 rounded-full border-3 border-indigo-500/20 border-t-indigo-500 animate-spin" />
-            <p className="text-sm text-gray-400 tracking-wider font-semibold">Mengamankan koneksi panel...</p>
+            <p className="text-sm text-gray-600 tracking-wider font-semibold">Mengamankan koneksi panel...</p>
           </div>
         ) : !isAdminLoggedIn ? (
           /* PASSWORD GATE SCREEN */
@@ -257,17 +240,17 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5 justify-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-1.5 justify-center">
                     Admin Gate
                   </h1>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-gray-600 mt-1">
                     Silakan masukkan sandi otorisasi moderasi
                   </p>
                 </div>
 
                 <form onSubmit={handleLogin} className="w-full space-y-4">
                   <div className="space-y-1.5 text-left">
-                    <label htmlFor="admin-password" className="text-xs font-semibold uppercase tracking-wider text-gray-400 block ml-1">
+                    <label htmlFor="admin-password" className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
                       Kata Sandi Admin
                     </label>
                     <input
@@ -277,7 +260,7 @@ export default function AdminPage() {
                       placeholder="Masukkan sandi..."
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all duration-200"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all duration-200"
                     />
                   </div>
 
@@ -289,7 +272,7 @@ export default function AdminPage() {
                   </button>
                 </form>
 
-                <div className="pt-3 border-t border-white/5 w-full flex items-center justify-between text-xs text-gray-500">
+                <div className="pt-3 border-t border-gray-200 w-full flex items-center justify-between text-xs text-gray-500">
                   <Link href="/" className="hover:text-indigo-400 flex items-center gap-1 transition-colors duration-200">
                     <ArrowLeft size={14} /> Kembali ke Chat Room
                   </Link>
@@ -305,9 +288,9 @@ export default function AdminPage() {
             className="flex-1 flex flex-col md:flex-row h-screen transition-all duration-300"
           >
             {/* COLUMN 1: LEFT SIDEBAR (CONTROL & STATISTICS PANEL) */}
-            <aside className="w-full md:w-[320px] bg-slate-950/85 border-b md:border-b-0 md:border-r border-white/10 flex flex-col h-[280px] md:h-screen shrink-0">
+            <aside className="w-full md:w-[320px] bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col h-[280px] md:h-screen shrink-0">
               {/* Sidebar Header */}
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.01]">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={20} className="text-amber-500" />
                   <span className="font-bold tracking-wider text-sm uppercase text-amber-500">Surabaya Mod</span>
@@ -315,7 +298,7 @@ export default function AdminPage() {
                 <button
                   onClick={handleLogout}
                   title="Keluar Admin"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-white/5 transition-colors duration-200"
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors duration-200"
                 >
                   <LogOut size={16} />
                 </button>
@@ -328,13 +311,13 @@ export default function AdminPage() {
                     <BarChart3 size={14} className="text-indigo-400" /> Statistik Room
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-left">
-                      <span className="text-[10px] text-gray-400 block font-semibold uppercase">Total Chat</span>
-                      <span className="text-xl font-bold text-white mt-1 block">{userStats.total}</span>
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-left">
+                      <span className="text-[10px] text-gray-500 block font-semibold uppercase">Total Chat</span>
+                      <span className="text-xl font-bold text-gray-900 mt-1 block">{userStats.total}</span>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-left">
-                      <span className="text-[10px] text-gray-400 block font-semibold uppercase">Pengguna</span>
-                      <span className="text-xl font-bold text-emerald-400 mt-1 block">{userStats.users}</span>
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-left">
+                      <span className="text-[10px] text-gray-500 block font-semibold uppercase">Pengguna</span>
+                      <span className="text-xl font-bold text-emerald-600 mt-1 block">{userStats.users}</span>
                     </div>
                   </div>
                 </div>
@@ -345,30 +328,30 @@ export default function AdminPage() {
                   </h3>
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <span className="text-[10px] text-gray-400 font-semibold block">Nama Display Admin</span>
+                      <span className="text-[10px] text-gray-500 font-semibold block">Nama Display Admin</span>
                       <input
                         type="text"
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
                         maxLength={30}
                         placeholder="Nama Display Admin"
-                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors duration-150"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-500 transition-colors duration-150"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-amber-950/20 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
                   <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-200/90 leading-relaxed">
-                    <span className="font-bold block text-amber-300 mb-0.5">Mode Moderasi Aktif</span>
+                  <div className="text-xs text-amber-900 leading-relaxed">
+                    <span className="font-bold block text-amber-700 mb-0.5">Mode Moderasi Aktif</span>
                     Setiap pesan yang dikirim oleh user akan terdaftar di panel kanan. Anda memiliki hak penuh untuk menghapus pesan yang melanggar ketentuan.
                   </div>
                 </div>
               </div>
 
               {/* Sidebar Footer */}
-              <div className="p-4 border-t border-white/10 text-center text-[10px] text-gray-600 bg-white/[0.005]">
+              <div className="p-4 border-t border-gray-200 text-center text-[10px] text-gray-500 bg-gray-50">
                 <Link href="/" className="font-semibold text-indigo-400 hover:underline inline-flex items-center gap-1">
                   Kembali ke Chat Publik &rarr;
                 </Link>
@@ -376,23 +359,23 @@ export default function AdminPage() {
             </aside>
 
             {/* COLUMN 2: RIGHT CHAT AREA (MODERATION CHAT WINDOW) */}
-            <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-slate-950/20">
+            <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-gray-50/50">
               {/* Chat Area Header */}
-              <header className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.01]">
+              <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                     <Users size={18} />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h2 className="font-bold text-white tracking-wide text-sm md:text-base">
+                      <h2 className="font-bold text-gray-900 tracking-wide text-sm md:text-base">
                         Shared Live Chat Room
                       </h2>
-                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider">
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-red-100 text-red-600 border border-red-200 uppercase tracking-wider">
                         Moderator View
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       Memantau dan menghapus pesan melanggar secara instan
                     </p>
                   </div>
@@ -422,10 +405,10 @@ export default function AdminPage() {
                         className="flex flex-col items-start"
                       >
                         {/* Name Label */}
-                        <div className="flex items-center gap-2 mb-1 ml-1 text-xs font-semibold text-gray-400">
+                        <div className="flex items-center gap-2 mb-1 ml-1 text-xs font-semibold text-gray-600">
                           <span>{msg.username}</span>
                           {isAdminMsg && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase tracking-wider">
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
                               ADMIN
                             </span>
                           )}
@@ -439,7 +422,7 @@ export default function AdminPage() {
                           <div
                             className={`px-4 py-2.5 text-sm flex-1 ${
                               isAdminMsg 
-                                ? 'bg-amber-950/20 text-amber-100 border border-amber-500/20 rounded-xl'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl'
                                 : 'bubble-other'
                             }`}
                           >
@@ -452,7 +435,7 @@ export default function AdminPage() {
                           <button
                             onClick={() => handleDeleteMessage(msg.id)}
                             title="Hapus Pesan"
-                            className="p-2 bg-red-950/40 hover:bg-red-900 border border-red-500/20 hover:border-red-500 text-red-400 rounded-lg transition-all duration-200 shadow-sm opacity-80 hover:opacity-100 shrink-0"
+                            className="p-2 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 text-red-600 rounded-lg transition-all duration-200 shadow-sm shrink-0"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -465,7 +448,7 @@ export default function AdminPage() {
               </div>
 
               {/* Admin Input Form footer */}
-              <footer className="p-4 border-t border-white/10 bg-white/[0.01]">
+              <footer className="p-4 border-t border-gray-200 bg-white">
                 <form onSubmit={handleSendAdminMessage} className="flex gap-2.5">
                   <input
                     type="text"
@@ -474,7 +457,7 @@ export default function AdminPage() {
                     placeholder={`Kirim pengumuman resmi sebagai ${adminName}...`}
                     value={adminMessage}
                     onChange={(e) => setAdminMessage(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all duration-200"
+                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all duration-200"
                   />
                   <button
                     type="submit"
@@ -489,6 +472,84 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
+                <LogOut size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Keluar Panel Admin?</h3>
+                <p className="text-sm text-gray-500 mt-1">Sesi moderasi Anda akan diakhiri. Apakah Anda yakin?</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={cancelLogout}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm"
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Hapus Pesan?</h3>
+                <p className="text-sm text-gray-500 mt-1">Hapus pesan ini dari room publik? Tindakan ini tidak bisa dibatalkan.</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={cancelDeleteMessage}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDeleteMessage}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm"
+                >
+                  Hapus Permanen
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
