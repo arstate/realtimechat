@@ -2,18 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  collection, 
+  ref, 
   query, 
-  orderBy, 
-  limit, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc,
-  setDoc,
-  doc,
-  getDoc,
+  orderByChild, 
+  limitToLast, 
+  onValue, 
+  push, 
+  remove,
+  set,
+  get,
   serverTimestamp 
-} from 'firebase/firestore';
+} from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { 
@@ -65,10 +64,10 @@ export default function AdminPage() {
       if (user) {
         setAuthReady(true);
         try {
-          // Check if active session already exists in Firestore
-          const sessionRef = doc(db, 'admin_sessions', user.uid);
-          const docSnap = await getDoc(sessionRef);
-          if (docSnap.exists() && docSnap.data().password === 'pemkot2026') {
+          // Check if active session already exists in Realtime Database
+          const sessionRef = ref(db, `admin_sessions/${user.uid}`);
+          const docSnap = await get(sessionRef);
+          if (docSnap.exists() && docSnap.val().password === 'pemkot2026') {
             setIsAdminLoggedIn(true);
           }
         } catch (e) {
@@ -90,20 +89,20 @@ export default function AdminPage() {
     if (!isAdminLoggedIn || !authReady) return;
 
     const q = query(
-      collection(db, 'global_messages'), 
-      orderBy('timestamp', 'asc'), 
-      limit(150)
+      ref(db, 'global_messages'), 
+      orderByChild('timestamp'), 
+      limitToLast(150)
     );
 
-    const unsubscribe = onSnapshot(
+    const unsubscribe = onValue(
       q, 
       (snapshot) => {
         const msgs: Message[] = [];
         let userCount = new Set<string>();
         let adminMsgsCount = 0;
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
           const senderType = data.senderType || 'user';
           const username = data.username || 'Anonymous';
           
@@ -114,7 +113,7 @@ export default function AdminPage() {
           }
 
           msgs.push({
-            id: doc.id,
+            id: childSnapshot.key as string,
             senderType,
             username,
             message: data.message || '',
@@ -155,7 +154,7 @@ export default function AdminPage() {
     setIsVerifying(true);
     try {
       // Secure write to admin_sessions. It will only succeed if password matches in rules.
-      await setDoc(doc(db, 'admin_sessions', auth.currentUser.uid), {
+      await set(ref(db, `admin_sessions/${auth.currentUser.uid}`), {
         password: password,
         timestamp: serverTimestamp()
       });
@@ -176,7 +175,7 @@ export default function AdminPage() {
       const user = auth.currentUser;
       if (user) {
         try {
-          await deleteDoc(doc(db, 'admin_sessions', user.uid));
+          await remove(ref(db, `admin_sessions/${user.uid}`));
         } catch (e) {
           console.error("Error clearing session:", e);
         }
@@ -191,7 +190,7 @@ export default function AdminPage() {
   const handleDeleteMessage = async (msgId: string) => {
     if (confirm("Hapus pesan ini dari room publik? Tindakan ini tidak bisa dibatalkan.")) {
       try {
-        await deleteDoc(doc(db, 'global_messages', msgId));
+        await remove(ref(db, `global_messages/${msgId}`));
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, `global_messages/${msgId}`);
       }
@@ -212,7 +211,7 @@ export default function AdminPage() {
     setAdminMessage('');
 
     try {
-      await addDoc(collection(db, 'global_messages'), {
+      await push(ref(db, 'global_messages'), {
         senderType: 'admin',
         username: adminName.trim() || 'Admin Support',
         message: trimmedMessage,
@@ -226,7 +225,7 @@ export default function AdminPage() {
   // Format timestamp helper
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Mengirim...';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 

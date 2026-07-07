@@ -1,10 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import { getDatabase } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCpP2BC6sirSyLenHOxDlfsnbw5P9811v0",
+  authDomain: "livechat-2bbb5.firebaseapp.com",
+  databaseURL: "https://livechat-2bbb5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "livechat-2bbb5",
+  storageBucket: "livechat-2bbb5.firebasestorage.app",
+  messagingSenderId: "33456186528",
+  appId: "1:33456186528:web:95d1d6bda34582792bd5c5"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getDatabase(app);
 export const auth = getAuth();
 
 if (typeof window !== 'undefined') {

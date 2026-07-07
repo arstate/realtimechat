@@ -2,16 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  collection, 
+  ref, 
   query, 
-  orderBy, 
-  limit, 
-  onSnapshot, 
-  addDoc, 
+  orderByChild, 
+  limitToLast, 
+  onValue, 
+  push, 
   serverTimestamp,
-  doc,
-  getDocFromServer
-} from 'firebase/firestore';
+  get
+} from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -51,7 +50,7 @@ export default function HomePage() {
   useEffect(() => {
     async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
+        await get(ref(db, 'test/connection'));
       } catch (error) {
         if (error instanceof Error && error.message.includes('the client is offline')) {
           console.error("Please check your Firebase configuration.");
@@ -91,19 +90,19 @@ export default function HomePage() {
     if (!isAuthReady) return;
 
     const q = query(
-      collection(db, 'global_messages'), 
-      orderBy('timestamp', 'asc'), 
-      limit(150)
+      ref(db, 'global_messages'), 
+      orderByChild('timestamp'), 
+      limitToLast(150)
     );
 
-    const unsubscribe = onSnapshot(
+    const unsubscribe = onValue(
       q, 
       (snapshot) => {
         const msgs: Message[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
           msgs.push({
-            id: doc.id,
+            id: childSnapshot.key as string,
             senderType: data.senderType || 'user',
             username: data.username || 'Anonymous',
             message: data.message || '',
@@ -161,7 +160,7 @@ export default function HomePage() {
     setMessageInput('');
 
     try {
-      await addDoc(collection(db, 'global_messages'), {
+      await push(ref(db, 'global_messages'), {
         senderType: 'user',
         username: username,
         message: trimmedMessage,
@@ -185,7 +184,7 @@ export default function HomePage() {
   // Format message timestamp
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Sambil mengirim...';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
