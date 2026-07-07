@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-outfit: var(--font-outfit), sans-serif;
+  
+  /* Brand Colors */
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-secondary: #10B981;
+  --color-panel-bg: #121214;
+  --color-panel-border: rgba(255, 255, 255, 0.06);
+  --color-chat-user: #4F46E5;
+  --color-chat-other: rgba(255, 255, 255, 0.04);
+
+  --radius-panel: 32px;
+  --radius-element: 20px;
+}
+
+:root {
+  --gradient-bg: radial-gradient(circle at top right, rgba(79, 70, 229, 0.06) 0%, transparent 60%), #0A0A0C;
+  --accent-glow: radial-gradient(circle at 80% 20%, rgba(79, 70, 229, 0.08) 0%, transparent 50%);
+  --panel-bg: #121214;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --text-primary: #E0E0E6;
+  --text-secondary: #9CA3AF;
+  
+  --chat-bg-user: #4F46E5;
+  --chat-text-user: #FFFFFF;
+  --chat-bg-other: rgba(255, 255, 255, 0.04);
+  --chat-text-other: #E0E0E6;
+
+  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  --radius-panel: 32px;
+  --radius-element: 20px;
+  --radius-bubble-user: 24px 24px 4px 24px;
+  --radius-bubble-other: 24px 24px 24px 4px;
+}
+
+body {
+  background: var(--gradient-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-glow);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glassmorphism panel class */
+.glass-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-panel);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat bubble shapes */
+.bubble-user {
+  background-color: var(--chat-bg-user);
+  color: var(--chat-text-user);
+  border-radius: var(--radius-bubble-user);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+}
+
+.bubble-other {
+  background-color: var(--chat-bg-other);
+  color: var(--chat-text-other);
+  border-radius: var(--radius-bubble-other);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Subtle pulse animation for active indicator */
+@keyframes soft-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.pulse-indicator {
+  animation: soft-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

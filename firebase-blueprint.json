@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "Message": {
+      "title": "Message",
+      "description": "A live chat message in the shared room",
+      "type": "object",
+      "properties": {
+        "senderType": {
+          "type": "string",
+          "enum": ["user", "admin"],
+          "description": "Type of sender: user or admin"
+        },
+        "username": {
+          "type": "string",
+          "description": "The displayed name of the sender"
+        },
+        "message": {
+          "type": "string",
+          "description": "The text content of the message"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The server timestamp when the message was sent"
+        }
+      },
+      "required": ["senderType", "username", "message", "timestamp"]
+    },
+    "AdminSession": {
+      "title": "AdminSession",
+      "description": "A session document created when admin logs in with the correct password",
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The server timestamp when the session was created"
+        }
+      },
+      "required": ["password", "timestamp"]
+    }
+  },
+  "firestore": {
+    "global_messages/{messageId}": {
+      "schema": "Message",
+      "description": "Collection of all shared room chat messages"
+    },
+    "admin_sessions/{uid}": {
+      "schema": "AdminSession",
+      "description": "Collection of active authenticated admin sessions"
+    }
+  }
+}

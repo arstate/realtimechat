@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Admin Session Collection
+    match /admin_sessions/{uid} {
+      allow create: if isSignedIn() 
+        && uid == request.auth.uid 
+        && incoming().password == "pemkot2026" 
+        && incoming().timestamp == request.time;
+      allow read: if isSignedIn() && uid == request.auth.uid;
+      allow delete: if isSignedIn() && uid == request.auth.uid;
+    }
+
+    // Global Messages Collection
+    match /global_messages/{messageId} {
+      allow read, list: if isSignedIn();
+      
+      allow create: if isSignedIn()
+        && incoming().senderType is string
+        && incoming().username is string
+        && incoming().username.size() >= 1
+        && incoming().username.size() <= 30
+        && incoming().message is string
+        && incoming().message.size() >= 1
+        && incoming().message.size() <= 1000
+        && incoming().timestamp == request.time
+        && (
+          incoming().senderType == "user" ||
+          (incoming().senderType == "admin" && exists(/databases/$(database)/documents/admin_sessions/$(request.auth.uid)))
+        );
+
+      allow delete: if isSignedIn()
+        && exists(/databases/$(database)/documents/admin_sessions/$(request.auth.uid));
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Surabaya Community Live Chat",
+  "description": "Shared Room Live Chat with real-time updates and password-protected admin moderation panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
