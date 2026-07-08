@@ -68,7 +68,7 @@ export const DAFTAR_KATA_KASAR: string[] = [
   "toketan", "tololan", "vaginaan", "yatiman",
   // --- KATA TAMBAHAN PENGGUNA ---
   "makmu kiper", "bawok", "bawuk", "ngentu", "bedhes", "bedes", "hancurit", "mbut", "mbot",
-  "tempik", "tmpk", "tmpek", "sutop", "sutob", "su apik", "su"
+  "tempik", "tmpk", "tmpek", "sutop", "sutob", "su apik"
 ];
 
 // ==========================================
@@ -375,7 +375,7 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   "bangke": "anjing", "bangkai": "anjing", "keparat": "anjing", "bedebah": "anjing",
   "anjing": "anjing", "asu": "anjing", "bajingan": "anjing", "bangsat": "anjing",
   "kampret": "anjing", "brengsek": "anjing", "berengsek": "anjing",
-  "su": "anjing", "su apik": "anjing",
+  "su apik": "anjing",
 
   // --- BODOH & KEJIWAAN ---
   "goblok": "goblok", "tolol": "goblok", "bego": "goblok", "idiot": "goblok",

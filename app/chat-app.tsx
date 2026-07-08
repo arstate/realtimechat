@@ -29,7 +29,8 @@ import {
   Bird,
   Rabbit,
   Ghost,
-  Bot
+  Bot,
+  Tv
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -56,16 +57,16 @@ const AVATARS = [
 ];
 
 const COLORS = [
-  'bg-blue-500',
-  'bg-indigo-500',
-  'bg-violet-500',
-  'bg-fuchsia-500',
-  'bg-pink-500',
-  'bg-rose-500',
-  'bg-orange-500',
-  'bg-emerald-500',
-  'bg-teal-500',
-  'bg-cyan-500'
+  'bg-blue-600',
+  'bg-indigo-600',
+  'bg-violet-600',
+  'bg-fuchsia-600',
+  'bg-pink-600',
+  'bg-rose-600',
+  'bg-orange-600',
+  'bg-emerald-600',
+  'bg-teal-600',
+  'bg-cyan-700'
 ];
 
 export default function HomePage() {
@@ -85,6 +86,7 @@ export default function HomePage() {
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [isVideotronMode, setIsVideotronMode] = useState<boolean>(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -340,30 +342,64 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-2xl h-[85vh] flex flex-col glass-panel overflow-hidden relative"
+            className={`w-full flex flex-col overflow-hidden relative transition-all duration-300 ${
+              isVideotronMode 
+                ? 'fixed inset-0 w-screen h-screen z-40 bg-slate-950 text-white rounded-none border-none' 
+                : 'max-w-2xl h-[85vh] glass-panel'
+            }`}
           >
             {/* Main Header */}
-            <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+            <header className={`px-6 py-4 border-b flex items-center justify-between transition-colors duration-200 ${
+              isVideotronMode 
+                ? 'border-slate-800 bg-slate-900/95 text-white' 
+                : 'border-gray-200 bg-gray-50/50 text-gray-900'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  isVideotronMode 
+                    ? 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300' 
+                    : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
+                }`}>
                   <MessageSquare size={20} className="stroke-[2]" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-gray-900 tracking-wide text-sm md:text-base">
+                  <h2 className={`font-bold tracking-wide ${
+                    isVideotronMode ? 'text-lg md:text-xl text-white' : 'text-sm md:text-base'
+                  }`}>
                     Surabaya Community Live Chat
                   </h2>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                  <div className="flex items-center gap-1.5 text-xs mt-0.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator inline-block" />
-                    <span>{activeUsersCount} Anggota Aktif</span>
+                    <span className={isVideotronMode ? 'text-slate-400' : 'text-gray-500'}>
+                      {activeUsersCount} Anggota Aktif
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
+                {/* Videotron Mode Toggle Button */}
+                <button
+                  onClick={() => setIsVideotronMode(!isVideotronMode)}
+                  title={isVideotronMode ? "Kembali ke Mode Biasa" : "Aktifkan Mode Videotron"}
+                  className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                    isVideotronMode
+                      ? 'bg-amber-500 hover:bg-amber-400 border-amber-600 text-slate-950 shadow-md shadow-amber-500/10'
+                      : 'bg-white hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-indigo-600 shadow-sm'
+                  }`}
+                >
+                  <Tv size={14} className={isVideotronMode ? "animate-pulse" : ""} />
+                  <span>{isVideotronMode ? "Layar Biasa" : "Mode Videotron"}</span>
+                </button>
+
                 <button
                   onClick={handleExitChat}
                   title="Keluar dari Obrolan"
-                  className="p-2 hover:bg-gray-100 text-gray-500 hover:text-red-500 rounded-lg transition-colors duration-200 flex items-center gap-1.5 text-xs"
+                  className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs cursor-pointer ${
+                    isVideotronMode 
+                      ? 'text-slate-400 hover:text-red-400 hover:bg-slate-800' 
+                      : 'hover:bg-gray-100 text-gray-500 hover:text-red-500'
+                  }`}
                 >
                   <LogOut size={16} />
                   <span className="hidden sm:inline">Keluar</span>
@@ -372,7 +408,11 @@ export default function HomePage() {
             </header>
 
             {/* Chat Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className={`flex-1 overflow-y-auto transition-colors duration-300 ${
+              isVideotronMode 
+                ? 'p-8 space-y-6 bg-slate-950 scrollbar-thin scrollbar-thumb-slate-800' 
+                : 'p-6 space-y-4 bg-transparent'
+            }`}>
               {isLoading ? (
                 <div className="h-full flex flex-col items-center justify-center space-y-3">
                   <div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" />
@@ -385,32 +425,52 @@ export default function HomePage() {
                   <p className="text-xs text-gray-500">Mulai kirimkan pesan pertama Anda ke forum Surabaya!</p>
                 </div>
               ) : (
-                
                 messages.map((msg, index) => {
                   const isMe = msg.username === username && msg.senderType === 'user';
                   const isAdminMsg = msg.senderType === 'admin';
                   
                   const avatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
                   const AvatarIcon = avatarDef.icon;
-                  const bubbleColor = msg.color || 'bg-indigo-500';
+                  
+                  let bubbleColor = msg.color || 'bg-indigo-600';
+                  // Boost contrast from -500 to -600/700
+                  if (bubbleColor.endsWith('-500')) {
+                    bubbleColor = bubbleColor.replace('-500', '-600');
+                  }
                   
                   return (
                     <div
                       key={msg.id || index}
-                      className={`flex gap-2.5 ${isMe ? 'flex-row-reverse items-end' : 'flex-row items-end'}`}
+                      className={`flex gap-3 ${isMe ? 'flex-row-reverse items-end' : 'flex-row items-end'} ${
+                        isVideotronMode ? 'my-4 gap-4' : ''
+                      }`}
                     >
                       {/* Avatar */}
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
-                        {isAdminMsg ? <ShieldAlert size={16} /> : <AvatarIcon size={16} />}
+                      <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm border ${
+                        isVideotronMode 
+                          ? 'w-12 h-12 border-slate-800' 
+                          : 'w-8 h-8 border-transparent'
+                      } ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
+                        {isAdminMsg ? (
+                          <ShieldAlert size={isVideotronMode ? 20 : 16} />
+                        ) : (
+                          <AvatarIcon size={isVideotronMode ? 20 : 16} />
+                        )}
                       </div>
 
-                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]`}>
                         {/* Name Label */}
                         {!isMe && (
-                          <span className="text-xs font-semibold text-gray-600 mb-1 ml-1 flex items-center gap-1">
+                          <span className={`font-semibold mb-1 ml-1 flex items-center gap-1.5 ${
+                            isVideotronMode ? 'text-sm font-bold text-slate-300' : 'text-xs text-gray-600'
+                          }`}>
                             {msg.username}
                             {isAdminMsg && (
-                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
+                              <span className={`rounded-full uppercase tracking-wider ${
+                                isVideotronMode 
+                                  ? 'px-2 py-0.5 text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/25' 
+                                  : 'px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300'
+                              }`}>
                                 ADMIN
                               </span>
                             )}
@@ -418,18 +478,32 @@ export default function HomePage() {
                         )}
                         
                         {isMe && (
-                          <span className="text-[10px] text-gray-500 mb-1 mr-1">
+                          <span className={`mb-1 mr-1 ${
+                            isVideotronMode ? 'text-xs text-slate-400 font-semibold' : 'text-[10px] text-gray-500'
+                          }`}>
                             Anda
                           </span>
                         )}
 
                         {/* Chat Bubble */}
-                        <div className="relative group">
+                        <div className="relative group w-full">
                           <div
-                            className={`px-4 py-2.5 text-sm text-white ${
+                            className={`text-white transition-all duration-200 ${
+                              isVideotronMode ? 'shadow-lg shadow-black/30' : 'shadow-sm'
+                            } ${
                               isAdminMsg
-                                ? 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl'
-                                : `${bubbleColor} ${isMe ? 'rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm' : 'rounded-tl-2xl rounded-tr-2xl rounded-br-2xl rounded-bl-sm'} shadow-sm`
+                                ? isVideotronMode
+                                  ? 'bg-amber-950/80 text-amber-200 border border-amber-800 rounded-2xl px-6 py-4 text-lg md:text-xl font-bold'
+                                  : 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl px-4 py-2.5 text-sm'
+                                : `${bubbleColor} ${
+                                    isMe 
+                                      ? 'rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm' 
+                                      : 'rounded-tl-2xl rounded-tr-2xl rounded-br-2xl rounded-bl-sm'
+                                  } ${
+                                    isVideotronMode 
+                                      ? 'px-6 py-4 text-lg md:text-xl font-bold tracking-normal leading-relaxed border border-white/5' 
+                                      : 'px-4 py-2.5 text-sm'
+                                  }`
                             }`}
                           >
                             <p className="break-words whitespace-pre-wrap leading-relaxed">
@@ -437,7 +511,9 @@ export default function HomePage() {
                             </p>
                             <div 
                               className={`text-[9px] mt-1 text-right select-none ${
-                                isAdminMsg ? 'text-amber-700/60' : 'text-white/70'
+                                isVideotronMode ? 'text-xs mt-2 text-white/50' : 'text-white/70'
+                              } ${
+                                isAdminMsg && !isVideotronMode ? 'text-amber-700/60' : ''
                               }`}
                             >
                               {formatTime(msg.timestamp)}
@@ -453,7 +529,11 @@ export default function HomePage() {
             </div>
 
             {/* Input Form Footer */}
-            <footer className="p-4 border-t border-gray-200 bg-white">
+            <footer className={`p-4 border-t transition-colors duration-300 ${
+              isVideotronMode 
+                ? 'border-slate-800 bg-slate-900/95' 
+                : 'border-gray-200 bg-white'
+            }`}>
               <form onSubmit={handleSendMessage} className="flex gap-2.5">
                 <input
                   type="text"
@@ -462,14 +542,20 @@ export default function HomePage() {
                   placeholder={`Menulis sebagai ${username}...`}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                  className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    isVideotronMode 
+                      ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
+                      : 'px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 text-sm'
+                  }`}
                 />
                 <button
                   type="submit"
                   disabled={!messageInput.trim()}
-                  className="p-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
+                  className={`bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
+                    isVideotronMode ? 'p-4' : 'p-3'
+                  }`}
                 >
-                  <Send size={18} />
+                  <Send size={isVideotronMode ? 20 : 18} />
                 </button>
               </form>
             </footer>
