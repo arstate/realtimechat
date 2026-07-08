@@ -49,6 +49,7 @@ export default function AdminPage() {
   const [adminName, setAdminName] = useState<string>('Admin Support');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState<boolean>(false);
   
   // Analytics
   const [userStats, setUserStats] = useState<{ total: number; users: number; admins: number }>({
@@ -178,6 +179,24 @@ export default function AdminPage() {
 
   const cancelDeleteMessage = () => {
     setShowDeleteConfirm(null);
+  };
+
+  // Delete all messages handlers
+  const handleDeleteAllMessages = () => {
+    setShowDeleteAllConfirm(true);
+  };
+
+  const confirmDeleteAllMessages = async () => {
+    setShowDeleteAllConfirm(false);
+    try {
+      await remove(ref(db, 'global_messages'));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'global_messages');
+    }
+  };
+
+  const cancelDeleteAllMessages = () => {
+    setShowDeleteAllConfirm(false);
   };
 
   // Send admin message handler
@@ -347,6 +366,20 @@ export default function AdminPage() {
                     <span className="font-bold block text-amber-700 mb-0.5">Mode Moderasi Aktif</span>
                     Setiap pesan yang dikirim oleh user akan terdaftar di panel kanan. Anda memiliki hak penuh untuk menghapus pesan yang melanggar ketentuan.
                   </div>
+                </div>
+
+                {/* DANGER ZONE - DELETE ALL CHATS */}
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-red-500 mb-3 flex items-center gap-1.5">
+                    <AlertCircle size={14} className="text-red-400" /> Area Bahaya
+                  </h3>
+                  <button
+                    onClick={handleDeleteAllMessages}
+                    className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 border border-red-200 text-red-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all duration-200 shadow-sm cursor-pointer font-bold"
+                  >
+                    <Trash2 size={14} />
+                    Hapus Semua Chat
+                  </button>
                 </div>
               </div>
 
@@ -544,6 +577,44 @@ export default function AdminPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm"
                 >
                   Hapus Permanen
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showDeleteAllConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2 animate-bounce">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 text-red-600">Hapus Semua Chat?</h3>
+                <p className="text-sm text-gray-500 mt-1">Tindakan ini akan menghapus **seluruh** riwayat pesan obrolan secara permanen dari server. Tindakan ini tidak dapat dibatalkan!</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={cancelDeleteAllMessages}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDeleteAllMessages}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm cursor-pointer animate-pulse font-bold"
+                >
+                  Ya, Hapus Semua
                 </button>
               </div>
             </motion.div>
