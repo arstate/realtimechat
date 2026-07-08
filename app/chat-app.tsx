@@ -124,6 +124,15 @@ export default function HomePage() {
     async function loadAssets() {
       if (typeof window === 'undefined') return;
       
+      // Fire DB requests immediately so they resolve in the background while UI animates
+      const dbSettingsPromise = Promise.all([
+        get(ref(db, 'chat_enabled')),
+        get(ref(db, 'chat_filter_enabled'))
+      ]).catch(e => {
+        console.error("DB error in background fetch:", e);
+        return [null, null];
+      });
+      
       const cachedTitle = localStorage.getItem('surabaya_cached_chat_title');
       const cachedIcon = localStorage.getItem('surabaya_cached_chat_icon');
       const cachedAvatars = localStorage.getItem('surabaya_cached_user_avatars');
@@ -168,16 +177,9 @@ export default function HomePage() {
           setDownloadStatus(step.text);
           
           if (step.progress === 85) {
-            try {
-              const [chatEnabledSnap, filterEnabledSnap] = await Promise.all([
-                get(ref(db, 'chat_enabled')),
-                get(ref(db, 'chat_filter_enabled'))
-              ]);
-              setIsChatEnabled(chatEnabledSnap.val() !== false);
-              setIsFilterEnabled(filterEnabledSnap.val() !== false);
-            } catch (e) {
-              console.error("Error loading configs in cache flow:", e);
-            }
+            const [chatEnabledSnap, filterEnabledSnap] = await dbSettingsPromise;
+            if (chatEnabledSnap) setIsChatEnabled(chatEnabledSnap.val() !== false);
+            if (filterEnabledSnap) setIsFilterEnabled(filterEnabledSnap.val() !== false);
           }
           
           await new Promise<void>((resolve) => {
@@ -187,12 +189,12 @@ export default function HomePage() {
                 clearInterval(interval);
                 resolve();
               } else {
-                currentProgress += 3;
+                currentProgress += 10;
                 setDownloadProgress(Math.min(currentProgress, target));
               }
-            }, 5);
+            }, 2);
           });
-          await new Promise(r => setTimeout(r, 40));
+          await new Promise(r => setTimeout(r, 10));
         }
         
         if (isMounted) {
@@ -214,19 +216,17 @@ export default function HomePage() {
         
         try {
           // Parallelize all network requests to the database
-          const [configSnapshot, chatEnabledSnap, filterEnabledSnap] = await Promise.all([
-            get(ref(db, 'chat_config')),
-            get(ref(db, 'chat_enabled')),
-            get(ref(db, 'chat_filter_enabled'))
-          ]);
+          const configPromise = get(ref(db, 'chat_config'));
+          const [chatEnabledSnap, filterEnabledSnap] = await dbSettingsPromise;
           
-          setIsChatEnabled(chatEnabledSnap.val() !== false);
-          setIsFilterEnabled(filterEnabledSnap.val() !== false);
+          if (chatEnabledSnap) setIsChatEnabled(chatEnabledSnap.val() !== false);
+          if (filterEnabledSnap) setIsFilterEnabled(filterEnabledSnap.val() !== false);
 
           setDownloadStatus(statuses[1].text);
           setDownloadProgress(25);
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 10));
 
+          const configSnapshot = await configPromise;
           const val = configSnapshot.val();
           if (val) {
             if (val.title) {
@@ -234,7 +234,7 @@ export default function HomePage() {
               localStorage.setItem('surabaya_cached_chat_title', val.title);
             }
             setDownloadProgress(35);
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 10));
 
             setDownloadStatus(statuses[2].text);
             if (val.icon) {
@@ -243,7 +243,7 @@ export default function HomePage() {
               localStorage.setItem('surabaya_cached_chat_icon', val.icon);
             }
             setDownloadProgress(55);
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 10));
 
             setDownloadStatus(statuses[3].text);
             if (val.userAvatars) {
@@ -260,7 +260,7 @@ export default function HomePage() {
               setUserAvatars([]);
             }
             setDownloadProgress(75);
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 10));
           } else {
             setChatTitle('Surabaya Community Live Chat');
             setDownloadProgress(75);
@@ -271,11 +271,11 @@ export default function HomePage() {
 
         setDownloadStatus(statuses[4].text);
         setDownloadProgress(95);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 10));
         
         setDownloadStatus(statuses[5].text);
         setDownloadProgress(100);
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r => setTimeout(r, 20));
         
         if (isMounted) {
           setIsAssetDownloading(false);
