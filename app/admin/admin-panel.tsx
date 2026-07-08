@@ -14,7 +14,7 @@ import {
   serverTimestamp 
 } from 'firebase/database';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trash2, 
   Send, 

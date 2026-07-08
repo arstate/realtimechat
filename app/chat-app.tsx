@@ -12,7 +12,8 @@ import {
   get
 } from 'firebase/database';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { motion, AnimatePresence } from 'motion/react';
+import { filterChatMessage } from '@/lib/chatFilter';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, 
   User, 
@@ -21,7 +22,14 @@ import {
   Users, 
   ArrowRight, 
   MessageCircle, 
-  LogOut 
+  LogOut,
+  Smile,
+  Cat,
+  Dog,
+  Bird,
+  Rabbit,
+  Ghost,
+  Bot
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -31,12 +39,46 @@ interface Message {
   username: string;
   message: string;
   timestamp: any;
+  avatar?: string;
+  color?: string;
 }
 
+
+const AVATARS = [
+  { id: 'smile', icon: Smile },
+  { id: 'cat', icon: Cat },
+  { id: 'dog', icon: Dog },
+  { id: 'bird', icon: Bird },
+  { id: 'rabbit', icon: Rabbit },
+  { id: 'bot', icon: Bot },
+  { id: 'ghost', icon: Ghost },
+  { id: 'user', icon: User }
+];
+
+const COLORS = [
+  'bg-blue-500',
+  'bg-indigo-500',
+  'bg-violet-500',
+  'bg-fuchsia-500',
+  'bg-pink-500',
+  'bg-rose-500',
+  'bg-orange-500',
+  'bg-emerald-500',
+  'bg-teal-500',
+  'bg-cyan-500'
+];
+
 export default function HomePage() {
+
+
   const [username, setUsername] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string>('smile');
+  const [userColor, setUserColor] = useState<string>('');
   const [isNameSet, setIsNameSet] = useState<boolean>(false);
   const [nameInput, setNameInput] = useState<string>('');
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('smile');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+
   const [messageInput, setMessageInput] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -46,14 +88,24 @@ export default function HomePage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+
+  
   // Hydrate username after mount
   useEffect(() => {
     const savedName = localStorage.getItem('surabaya_chat_username');
+    const savedAvatar = localStorage.getItem('surabaya_chat_avatar') || 'smile';
+    const savedColor = localStorage.getItem('surabaya_chat_color') || COLORS[Math.floor(Math.random() * COLORS.length)];
     if (savedName) {
       setUsername(savedName);
+      setUserAvatar(savedAvatar);
+      setUserColor(savedColor);
       setIsNameSet(true);
+    } else {
+      setSelectedColor(savedColor);
     }
   }, []);
+
+
 
   // 3. Real-time Messages Subscription
   useEffect(() => {
@@ -75,6 +127,8 @@ export default function HomePage() {
             username: data.username || 'Anonymous',
             message: data.message || '',
             timestamp: data.timestamp,
+            avatar: data.avatar,
+            color: data.color,
           });
         });
         setMessages(msgs);
@@ -98,6 +152,7 @@ export default function HomePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  
   const handleJoinChat = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = nameInput.trim();
@@ -109,11 +164,17 @@ export default function HomePage() {
     }
 
     setUsername(trimmedName);
+    setUserAvatar(selectedAvatar);
+    setUserColor(selectedColor);
     setIsNameSet(true);
+    
     if (typeof window !== 'undefined') {
       localStorage.setItem('surabaya_chat_username', trimmedName);
+      localStorage.setItem('surabaya_chat_avatar', selectedAvatar);
+      localStorage.setItem('surabaya_chat_color', selectedColor);
     }
   };
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,12 +189,18 @@ export default function HomePage() {
     setMessageInput('');
 
     try {
+      // Saring pesan terlebih dahulu sebelum dikirim ke database
+      const filteredMsg = filterChatMessage(trimmedMessage);
+      
       await push(ref(db, 'global_messages'), {
         senderType: 'user',
         username: username,
-        message: trimmedMessage,
+        message: filteredMsg,
+        avatar: userAvatar,
+        color: userColor,
         timestamp: serverTimestamp(),
       });
+
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'global_messages');
     }
@@ -143,14 +210,18 @@ export default function HomePage() {
     setShowExitConfirm(true);
   };
 
+  
   const confirmExitChat = () => {
     setUsername('');
     setIsNameSet(false);
     setShowExitConfirm(false);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('surabaya_chat_username');
+      localStorage.removeItem('surabaya_chat_avatar');
+      localStorage.removeItem('surabaya_chat_color');
     }
   };
+
 
   const cancelExitChat = () => {
     setShowExitConfirm(false);
@@ -219,7 +290,34 @@ export default function HomePage() {
                   </div>
                 </div>
 
+
+                <div className="space-y-1.5 text-left pt-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                    Pilih Avatar Anda
+                  </label>
+                  <div className="flex flex-wrap gap-2 justify-center pb-2">
+                    {AVATARS.map((avatar) => {
+                      const Icon = avatar.icon;
+                      return (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar.id)}
+                          className={`p-2.5 rounded-xl border transition-all duration-200 ${
+                            selectedAvatar === avatar.id
+                              ? 'bg-indigo-50 border-indigo-500 text-indigo-600 shadow-sm scale-110'
+                              : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                          }`}
+                        >
+                          <Icon size={20} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <button
+
                   type="submit"
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group"
                 >
@@ -287,53 +385,63 @@ export default function HomePage() {
                   <p className="text-xs text-gray-500">Mulai kirimkan pesan pertama Anda ke forum Surabaya!</p>
                 </div>
               ) : (
+                
                 messages.map((msg, index) => {
                   const isMe = msg.username === username && msg.senderType === 'user';
                   const isAdminMsg = msg.senderType === 'admin';
                   
+                  const avatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
+                  const AvatarIcon = avatarDef.icon;
+                  const bubbleColor = msg.color || 'bg-indigo-500';
+                  
                   return (
                     <div
                       key={msg.id || index}
-                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                      className={`flex gap-2.5 ${isMe ? 'flex-row-reverse items-end' : 'flex-row items-end'}`}
                     >
-                      {/* Name Label */}
-                      {!isMe && (
-                        <span className="text-xs font-semibold text-gray-600 mb-1 ml-1 flex items-center gap-1">
-                          {msg.username}
-                          {isAdminMsg && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
-                              ADMIN
-                            </span>
-                          )}
-                        </span>
-                      )}
-                      
-                      {isMe && (
-                        <span className="text-[10px] text-gray-500 mb-1 mr-1">
-                          Anda
-                        </span>
-                      )}
+                      {/* Avatar */}
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
+                        {isAdminMsg ? <ShieldAlert size={16} /> : <AvatarIcon size={16} />}
+                      </div>
 
-                      {/* Chat Bubble */}
-                      <div className="max-w-[85%] md:max-w-[75%] relative group">
-                        <div
-                          className={`px-4 py-2.5 text-sm ${
-                            isMe 
-                              ? 'bubble-user' 
-                              : isAdminMsg 
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                        {/* Name Label */}
+                        {!isMe && (
+                          <span className="text-xs font-semibold text-gray-600 mb-1 ml-1 flex items-center gap-1">
+                            {msg.username}
+                            {isAdminMsg && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 uppercase tracking-wider">
+                                ADMIN
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        
+                        {isMe && (
+                          <span className="text-[10px] text-gray-500 mb-1 mr-1">
+                            Anda
+                          </span>
+                        )}
+
+                        {/* Chat Bubble */}
+                        <div className="relative group">
+                          <div
+                            className={`px-4 py-2.5 text-sm text-white ${
+                              isAdminMsg
                                 ? 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl'
-                                : 'bubble-other'
-                          }`}
-                        >
-                          <p className="break-words whitespace-pre-wrap leading-relaxed">
-                            {msg.message}
-                          </p>
-                          <div 
-                            className={`text-[9px] mt-1 text-right select-none ${
-                              isMe ? 'text-indigo-200' : 'text-gray-500'
+                                : `${bubbleColor} ${isMe ? 'rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm' : 'rounded-tl-2xl rounded-tr-2xl rounded-br-2xl rounded-bl-sm'} shadow-sm`
                             }`}
                           >
-                            {formatTime(msg.timestamp)}
+                            <p className="break-words whitespace-pre-wrap leading-relaxed">
+                              {msg.message}
+                            </p>
+                            <div 
+                              className={`text-[9px] mt-1 text-right select-none ${
+                                isAdminMsg ? 'text-amber-700/60' : 'text-white/70'
+                              }`}
+                            >
+                              {formatTime(msg.timestamp)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -408,15 +516,6 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Admin Panel Quick Link */}
-      <div className="mt-6 flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-400 transition-colors duration-200">
-        <Users size={12} />
-        <span>Ingin moderasi?</span>
-        <Link href="/admin" className="font-semibold text-indigo-400 hover:underline">
-          Masuk Halaman Admin &rarr;
-        </Link>
-      </div>
     </main>
   );
 }
