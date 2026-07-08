@@ -52,6 +52,7 @@ export default function AdminPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState<boolean>(false);
+  const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState<string | null>(null);
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
   const videotronEndRef = useRef<HTMLDivElement>(null);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
@@ -306,14 +307,24 @@ export default function AdminPage() {
     e.target.value = '';
   };
   
-  const handleDeleteUserAvatar = async (id: string) => {
-    if (confirm('Hapus avatar ini?')) {
+  const handleDeleteUserAvatar = (id: string) => {
+    setShowDeleteAvatarConfirm(id);
+  };
+
+  const confirmDeleteAvatar = async () => {
+    if (showDeleteAvatarConfirm) {
+      const id = showDeleteAvatarConfirm;
+      setShowDeleteAvatarConfirm(null);
       try {
         await set(ref(db, `chat_config/userAvatars/${id}`), null);
       } catch (error) {
         console.error(error);
       }
     }
+  };
+
+  const cancelDeleteAvatar = () => {
+    setShowDeleteAvatarConfirm(null);
   };
 
   // Handle Login submission
@@ -1008,6 +1019,44 @@ export default function AdminPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm cursor-pointer animate-pulse font-bold"
                 >
                   Ya, Hapus Semua
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showDeleteAvatarConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Hapus Avatar Ini?</h3>
+                <p className="text-sm text-gray-500 mt-1">Avatar ini tidak akan bisa dipilih lagi oleh pengguna baru. Apakah Anda yakin?</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={cancelDeleteAvatar}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDeleteAvatar}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm cursor-pointer font-bold"
+                >
+                  Ya, Hapus
                 </button>
               </div>
             </motion.div>
