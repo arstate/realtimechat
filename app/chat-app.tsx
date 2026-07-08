@@ -19,6 +19,7 @@ import {
   User, 
   MessageSquare, 
   ShieldAlert, 
+  ShieldCheck,
   Users, 
   ArrowRight, 
   MessageCircle, 
@@ -30,7 +31,8 @@ import {
   Rabbit,
   Ghost,
   Bot,
-  Tv
+  Tv,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -85,8 +87,12 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+  const isVideotronMode = false;
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
-  const [isVideotronMode, setIsVideotronMode] = useState<boolean>(false);
+    const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
+  const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
+  const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
+  const [chatIcon, setChatIcon] = useState<string>('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -154,6 +160,36 @@ export default function HomePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 4. Real-time Chat & Filter Enabled State Subscription
+  useEffect(() => {
+    const filterRef = ref(db, 'chat_filter_enabled');
+    const unsubscribeFilter = onValue(filterRef, (snapshot) => {
+      const val = snapshot.val();
+      setIsFilterEnabled(val !== false); // default to true if null/undefined
+    });
+
+    const configRef = ref(db, 'chat_config');
+    const unsubscribeConfig = onValue(configRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        if (val.title) setChatTitle(val.title);
+        if (val.icon) setChatIcon(val.icon);
+      }
+    });
+
+    const chatEnabledRef = ref(db, 'chat_enabled');
+    const unsubscribeChatEnabled = onValue(chatEnabledRef, (snapshot) => {
+      const val = snapshot.val();
+      setIsChatEnabled(val !== false); // default to true if null/undefined
+    });
+
+    return () => {
+      unsubscribeFilter();
+      unsubscribeChatEnabled();
+      unsubscribeConfig();
+    };
+  }, []);
+
   
   const handleJoinChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +217,7 @@ export default function HomePage() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedMessage = messageInput.trim();
-    if (!trimmedMessage) return;
+    if (!trimmedMessage || !isChatEnabled) return;
 
     if (trimmedMessage.length > 1000) {
       alert("Pesan terlalu panjang (maksimum 1000 karakter)");
@@ -191,8 +227,8 @@ export default function HomePage() {
     setMessageInput('');
 
     try {
-      // Saring pesan terlebih dahulu sebelum dikirim ke database
-      const filteredMsg = filterChatMessage(trimmedMessage);
+      // Saring pesan terlebih dahulu sebelum dikirim ke database jika filter aktif
+      const filteredMsg = isFilterEnabled ? filterChatMessage(trimmedMessage) : trimmedMessage;
       
       await push(ref(db, 'global_messages'), {
         senderType: 'user',
@@ -263,7 +299,7 @@ export default function HomePage() {
 
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                  Surabaya Community
+                  {chatTitle}
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   Bergabung ke Shared Chat Room
@@ -364,33 +400,42 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h2 className={`font-bold tracking-wide ${
-                    isVideotronMode ? 'text-lg md:text-xl text-white' : 'text-sm md:text-base'
+                    'text-sm md:text-base'
                   }`}>
-                    Surabaya Community Live Chat
+                    {chatTitle}
                   </h2>
-                  <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator inline-block" />
-                    <span className={isVideotronMode ? 'text-slate-400' : 'text-gray-500'}>
-                      {activeUsersCount} Anggota Aktif
-                    </span>
+                  <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs mt-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator inline-block" />
+                      <span className={'text-gray-500 font-medium'}>
+                        {activeUsersCount} Anggota Aktif
+                      </span>
+                    </div>
+                    <span className={'text-gray-300'}>•</span>
+                    {isFilterEnabled ? (
+                      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                        isVideotronMode 
+                          ? 'bg-emerald-950/40 border-emerald-800 text-emerald-400' 
+                          : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                      }`}>
+                        <ShieldCheck size={10} className="stroke-[2.5]" />
+                        Filter Aktif
+                      </span>
+                    ) : (
+                      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                        isVideotronMode 
+                          ? 'bg-rose-950/40 border-rose-800 text-rose-400' 
+                          : 'bg-rose-50 border-rose-100 text-rose-700'
+                      }`}>
+                        <ShieldAlert size={10} className="stroke-[2.5]" />
+                        Sensor Off
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 md:gap-3">
-                {/* Videotron Mode Toggle Button */}
-                <button
-                  onClick={() => setIsVideotronMode(!isVideotronMode)}
-                  title={isVideotronMode ? "Kembali ke Mode Biasa" : "Aktifkan Mode Videotron"}
-                  className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                    isVideotronMode
-                      ? 'bg-amber-500 hover:bg-amber-400 border-amber-600 text-slate-950 shadow-md shadow-amber-500/10'
-                      : 'bg-white hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-indigo-600 shadow-sm'
-                  }`}
-                >
-                  <Tv size={14} className={isVideotronMode ? "animate-pulse" : ""} />
-                  <span>{isVideotronMode ? "Layar Biasa" : "Mode Videotron"}</span>
-                </button>
 
                 <button
                   onClick={handleExitChat}
@@ -422,7 +467,7 @@ export default function HomePage() {
                 <div className="h-full flex flex-col items-center justify-center space-y-2 text-center max-w-xs mx-auto">
                   <MessageCircle size={36} className="text-gray-600 stroke-[1.5]" />
                   <p className="text-sm font-semibold text-gray-400">Belum ada obrolan</p>
-                  <p className="text-xs text-gray-500">Mulai kirimkan pesan pertama Anda ke forum Surabaya!</p>
+                  <p className="text-xs text-gray-500">Mulai kirimkan pesan pertama Anda ke forum!</p>
                 </div>
               ) : (
                 messages.map((msg, index) => {
@@ -442,7 +487,7 @@ export default function HomePage() {
                     <div
                       key={msg.id || index}
                       className={`flex gap-3 ${isMe ? 'flex-row-reverse items-end' : 'flex-row items-end'} ${
-                        isVideotronMode ? 'my-4 gap-4' : ''
+                        ''
                       }`}
                     >
                       {/* Avatar */}
@@ -452,9 +497,9 @@ export default function HomePage() {
                           : 'w-8 h-8 border-transparent'
                       } ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
                         {isAdminMsg ? (
-                          <ShieldAlert size={isVideotronMode ? 20 : 16} />
+                          <ShieldAlert size={16} />
                         ) : (
-                          <AvatarIcon size={isVideotronMode ? 20 : 16} />
+                          <AvatarIcon size={16} />
                         )}
                       </div>
 
@@ -462,7 +507,7 @@ export default function HomePage() {
                         {/* Name Label */}
                         {!isMe && (
                           <span className={`font-semibold mb-1 ml-1 flex items-center gap-1.5 ${
-                            isVideotronMode ? 'text-sm font-bold text-slate-300' : 'text-xs text-gray-600'
+                            'text-xs text-gray-600'
                           }`}>
                             {msg.username}
                             {isAdminMsg && (
@@ -479,7 +524,7 @@ export default function HomePage() {
                         
                         {isMe && (
                           <span className={`mb-1 mr-1 ${
-                            isVideotronMode ? 'text-xs text-slate-400 font-semibold' : 'text-[10px] text-gray-500'
+                            'text-[10px] text-gray-500'
                           }`}>
                             Anda
                           </span>
@@ -489,7 +534,7 @@ export default function HomePage() {
                         <div className="relative group w-full">
                           <div
                             className={`text-white transition-all duration-200 ${
-                              isVideotronMode ? 'shadow-lg shadow-black/30' : 'shadow-sm'
+                              'shadow-sm'
                             } ${
                               isAdminMsg
                                 ? isVideotronMode
@@ -511,7 +556,7 @@ export default function HomePage() {
                             </p>
                             <div 
                               className={`text-[9px] mt-1 text-right select-none ${
-                                isVideotronMode ? 'text-xs mt-2 text-white/50' : 'text-white/70'
+                                'text-white/70'
                               } ${
                                 isAdminMsg && !isVideotronMode ? 'text-amber-700/60' : ''
                               }`}
@@ -534,30 +579,43 @@ export default function HomePage() {
                 ? 'border-slate-800 bg-slate-900/95' 
                 : 'border-gray-200 bg-white'
             }`}>
-              <form onSubmit={handleSendMessage} className="flex gap-2.5">
-                <input
-                  type="text"
-                  required
-                  maxLength={1000}
-                  placeholder={`Menulis sebagai ${username}...`}
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
-                    isVideotronMode 
-                      ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
-                      : 'px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 text-sm'
-                  }`}
-                />
-                <button
-                  type="submit"
-                  disabled={!messageInput.trim()}
-                  className={`bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
-                    isVideotronMode ? 'p-4' : 'p-3'
-                  }`}
-                >
-                  <Send size={isVideotronMode ? 20 : 18} />
-                </button>
-              </form>
+              {isChatEnabled ? (
+                <form onSubmit={handleSendMessage} className="flex gap-2.5">
+                  <input
+                    type="text"
+                    required
+                    maxLength={1000}
+                    placeholder={`Menulis sebagai ${username}...`}
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
+                      isVideotronMode 
+                        ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
+                        : 'px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 text-sm'
+                    }`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!messageInput.trim() || !isChatEnabled}
+                    className={`bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
+                      'p-3'
+                    }`}
+                  >
+                    <Send size={18} />
+                  </button>
+                </form>
+              ) : (
+                <div className={`flex items-center gap-3 p-3 md:p-4 rounded-xl border ${
+                  isVideotronMode 
+                    ? 'bg-slate-900/50 border-slate-800 text-slate-400' 
+                    : 'bg-gray-50 border-gray-200 text-gray-500'
+                }`}>
+                  <Lock size={18} className={isVideotronMode ? 'text-slate-500' : 'text-gray-400'} />
+                  <span className={`text-sm font-medium ${isVideotronMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                    Obrolan ditutup. Hanya admin yang dapat mengirim pesan.
+                  </span>
+                </div>
+              )}
             </footer>
           </motion.div>
         )}
