@@ -13,6 +13,7 @@ import {
 } from 'firebase/database';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { filterChatMessage } from '@/lib/chatFilter';
+import { getOptimizedAvatarUrl } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, 
@@ -188,14 +189,23 @@ export default function HomePage() {
     });
 
     const configRef = ref(db, 'chat_config');
-    const unsubscribeConfig = onValue(configRef, (snapshot) => {
+    const unsubscribeConfig = onValue(configRef, async (snapshot) => {
       const val = snapshot.val();
       if (val) {
         if (val.title) setChatTitle(val.title);
-        if (val.icon) setChatIcon(val.icon);
+        if (val.icon) {
+          const optimizedIcon = await getOptimizedAvatarUrl(val.icon);
+          setChatIcon(optimizedIcon);
+        }
         if (val.userAvatar) setUserAvatarIcon(val.userAvatar);
         if (val.userAvatars) {
-          const avatarsArr = Object.keys(val.userAvatars).map(k => ({id: k, url: val.userAvatars[k]}));
+          const keys = Object.keys(val.userAvatars);
+          const avatarsArr = await Promise.all(
+            keys.map(async k => ({
+              id: k,
+              url: await getOptimizedAvatarUrl(val.userAvatars[k])
+            }))
+          );
           setUserAvatars(avatarsArr);
           
           const savedAvatar = typeof window !== 'undefined' ? localStorage.getItem('surabaya_chat_avatar') : null;
