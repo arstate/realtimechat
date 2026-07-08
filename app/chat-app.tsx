@@ -944,14 +944,12 @@ export default function HomePage() {
                         {/* Chat Bubble */}
                         <div className="relative group w-full">
                           <div
-                            className={`text-white transition-all duration-200 ${
-                              'shadow-sm'
-                            } ${
+                            className={`transition-all duration-200 shadow-sm ${
                               isAdminMsg
                                 ? isVideotronMode
                                   ? 'bg-amber-950/80 text-amber-200 border border-amber-800 rounded-2xl px-8 py-5 text-xl md:text-2xl lg:text-3xl font-extrabold shadow-lg'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl px-4 py-2.5 text-sm'
-                                : `${bubbleColor} ${
+                                  : 'bg-amber-100 text-amber-950 border border-amber-200 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-inner'
+                                : `text-white ${bubbleColor} ${
                                     isMe 
                                       ? 'rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm' 
                                       : 'rounded-tl-2xl rounded-tr-2xl rounded-br-2xl rounded-bl-sm'
@@ -966,12 +964,12 @@ export default function HomePage() {
                               {msg.message}
                             </p>
                             <div 
-                              className={`select-none mt-2 text-right ${
+                              className={`select-none text-right ${
                                 isVideotronMode 
                                   ? 'text-xs text-white/60 font-mono mt-2' 
-                                  : 'text-[9px] text-white/70 mt-1'
-                              } ${
-                                isAdminMsg && !isVideotronMode ? 'text-amber-700/60' : ''
+                                  : isAdminMsg
+                                    ? 'text-[10px] text-amber-800 font-bold mt-1'
+                                    : 'text-[9px] text-white/70 mt-1'
                               }`}
                             >
                               {formatTime(msg.timestamp)}
