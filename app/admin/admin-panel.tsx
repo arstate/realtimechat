@@ -324,14 +324,17 @@ export default function AdminPage() {
           { text: 'Selesai!', progress: 100 }
         ];
 
+        let currentProgress = 0;
         for (const step of statuses) {
           if (!isMounted) return;
           setDownloadStatus(step.text);
           
           if (step.progress === 85) {
             try {
-              const chatEnabledSnap = await get(ref(db, 'chat_enabled'));
-              const filterEnabledSnap = await get(ref(db, 'chat_filter_enabled'));
+              const [chatEnabledSnap, filterEnabledSnap] = await Promise.all([
+                get(ref(db, 'chat_enabled')),
+                get(ref(db, 'chat_filter_enabled'))
+              ]);
               setIsChatEnabled(chatEnabledSnap.val() !== false);
               setIsFilterEnabled(filterEnabledSnap.val() !== false);
             } catch (e) {
@@ -340,19 +343,18 @@ export default function AdminPage() {
           }
           
           await new Promise<void>((resolve) => {
-            let current = downloadProgress;
             const target = step.progress;
             const interval = setInterval(() => {
-              if (current >= target) {
+              if (currentProgress >= target) {
                 clearInterval(interval);
                 resolve();
               } else {
-                current += 3;
-                setDownloadProgress(Math.min(current, target));
+                currentProgress += 3;
+                setDownloadProgress(Math.min(currentProgress, target));
               }
-            }, 10);
+            }, 5);
           });
-          await new Promise(r => setTimeout(r, 120));
+          await new Promise(r => setTimeout(r, 40));
         }
         
         if (isMounted) {
@@ -371,15 +373,23 @@ export default function AdminPage() {
 
         setDownloadStatus(statuses[0].text);
         setDownloadProgress(5);
-        await new Promise(r => setTimeout(r, 400));
-        
-        setDownloadStatus(statuses[1].text);
-        setDownloadProgress(25);
         
         try {
-          const configSnapshot = await get(ref(db, 'chat_config'));
-          const val = configSnapshot.val();
+          // Parallelize all network requests to the database
+          const [configSnapshot, chatEnabledSnap, filterEnabledSnap] = await Promise.all([
+            get(ref(db, 'chat_config')),
+            get(ref(db, 'chat_enabled')),
+            get(ref(db, 'chat_filter_enabled'))
+          ]);
           
+          setIsChatEnabled(chatEnabledSnap.val() !== false);
+          setIsFilterEnabled(filterEnabledSnap.val() !== false);
+
+          setDownloadStatus(statuses[1].text);
+          setDownloadProgress(25);
+          await new Promise(r => setTimeout(r, 100));
+
+          const val = configSnapshot.val();
           if (val) {
             if (val.title) {
               setChatTitle(val.title);
@@ -387,7 +397,7 @@ export default function AdminPage() {
               localStorage.setItem('surabaya_cached_chat_title', val.title);
             }
             setDownloadProgress(35);
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 100));
 
             setDownloadStatus(statuses[2].text);
             if (val.icon) {
@@ -396,7 +406,7 @@ export default function AdminPage() {
               localStorage.setItem('surabaya_cached_chat_icon', val.icon);
             }
             setDownloadProgress(55);
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 100));
 
             setDownloadStatus(statuses[3].text);
             if (val.userAvatars) {
@@ -413,7 +423,7 @@ export default function AdminPage() {
               setUserAvatars([]);
             }
             setDownloadProgress(75);
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 100));
           } else {
             setChatTitle('Surabaya Community Live Chat');
             setDraftTitle('Surabaya Community Live Chat');
@@ -423,22 +433,13 @@ export default function AdminPage() {
           console.error("Error downloading from DB:", e);
         }
         
-        // Sync real-time settings BEFORE dismissing download overlay
         setDownloadStatus(statuses[4].text);
-        try {
-          const chatEnabledSnap = await get(ref(db, 'chat_enabled'));
-          const filterEnabledSnap = await get(ref(db, 'chat_filter_enabled'));
-          setIsChatEnabled(chatEnabledSnap.val() !== false);
-          setIsFilterEnabled(filterEnabledSnap.val() !== false);
-        } catch (e) {
-          console.error("Error loading chat settings in first-time flow:", e);
-        }
         setDownloadProgress(95);
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 100));
         
         setDownloadStatus(statuses[5].text);
         setDownloadProgress(100);
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 150));
         
         if (isMounted) {
           setIsAssetDownloading(false);
