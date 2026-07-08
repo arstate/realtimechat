@@ -93,6 +93,7 @@ export default function HomePage() {
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
+  const [userAvatars, setUserAvatars] = useState<{id: string, url: string}[]>([]);
   const [userAvatarIcon, setUserAvatarIcon] = useState<string>('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -176,6 +177,15 @@ export default function HomePage() {
         if (val.title) setChatTitle(val.title);
         if (val.icon) setChatIcon(val.icon);
         if (val.userAvatar) setUserAvatarIcon(val.userAvatar);
+        if (val.userAvatars) {
+          const avatarsArr = Object.keys(val.userAvatars).map(k => ({id: k, url: val.userAvatars[k]}));
+          setUserAvatars(avatarsArr);
+          if (avatarsArr.length > 0 && !localStorage.getItem('surabaya_chat_avatar')) {
+            setUserAvatar(avatarsArr[0].id);
+          }
+        } else {
+          setUserAvatars([]);
+        }
       }
     });
 
@@ -461,8 +471,9 @@ export default function HomePage() {
                   const isMe = msg.username === username && msg.senderType === 'user';
                   const isAdminMsg = msg.senderType === 'admin';
                   
-                  const avatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
-                  const AvatarIcon = avatarDef.icon;
+                  const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
+                  const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
+                  const AvatarIcon = fallbackAvatarDef.icon;
                   
                   let bubbleColor = msg.color || 'bg-indigo-600';
                   // Boost contrast from -500 to -600/700
@@ -485,8 +496,8 @@ export default function HomePage() {
                       } ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
                         {isAdminMsg ? (
                           <ShieldAlert size={16} />
-                        ) : userAvatarIcon ? (
-                          <img src={userAvatarIcon} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                        ) : selectedCustomAvatar ? (
+                          <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                         ) : (
                           <AvatarIcon size={16} />
                         )}

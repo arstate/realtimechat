@@ -58,8 +58,10 @@ export default function AdminPage() {
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
-  const [userAvatarIcon, setUserAvatarIcon] = useState<string>('');
-  const [draftTitle, setDraftTitle] = useState<string>('Surabaya Community Live Chat');
+    const [draftTitle, setDraftTitle] = useState<string>('Surabaya Community Live Chat');
+  const [adminView, setAdminView] = useState<'chat' | 'avatars'>('chat');
+  const [userAvatars, setUserAvatars] = useState<{id: string, url: string}[]>([]);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   
   // Analytics
   const [userStats, setUserStats] = useState<{ total: number; users: number; admins: number }>({
@@ -247,16 +249,32 @@ export default function AdminPage() {
       return;
     }
 
+    setIsUploadingAvatar(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64String = event.target?.result as string;
       try {
-        await set(ref(db, 'chat_config/userAvatar'), base64String);
+        const newAvatarRef = push(ref(db, 'chat_config/userAvatars'));
+        await set(newAvatarRef, base64String);
       } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, 'chat_config/userAvatar');
+        handleFirestoreError(error, OperationType.UPDATE, 'chat_config/userAvatars');
+      } finally {
+        setIsUploadingAvatar(false);
       }
     };
     reader.readAsDataURL(file);
+    // clear input
+    e.target.value = '';
+  };
+  
+  const handleDeleteUserAvatar = async (id: string) => {
+    if (confirm('Hapus avatar ini?')) {
+      try {
+        await set(ref(db, `chat_config/userAvatars/${id}`), null);
+      } catch (error) {
+        console.error(error);
+      }
+    }
   };
 
   // Handle Login submission
@@ -534,26 +552,33 @@ export default function AdminPage() {
                     </div>
 
                     
-                    {/* User Avatar Upload */}
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-gray-500 font-semibold block">Avatar Default User (PNG/JPG)</span>
-                      <div className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                          {userAvatarIcon ? (
-                            <img src={userAvatarIcon} alt="User Avatar" className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={16} className="text-gray-400" />
-                          )}
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg"
-                          onChange={handleUserAvatarUpload}
-                          className="text-[10px] text-gray-600 w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        />
-                      </div>
+                    
+                    {/* Navigation Views */}
+                    <div className="space-y-2 mt-4 pt-4 border-t border-gray-200">
+                      <span className="text-[10px] text-gray-500 font-semibold block uppercase tracking-wider">Navigasi Admin</span>
+                      <button
+                        onClick={() => setAdminView('chat')}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors ${
+                          adminView === 'chat' 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <MessageSquare size={16} />
+                        Buka Live Chat
+                      </button>
+                      <button
+                        onClick={() => setAdminView('avatars')}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors ${
+                          adminView === 'avatars' 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Users size={16} />
+                        Kelola Avatar User
+                      </button>
                     </div>
-
                     {/* Chat Enabled Toggle Switch */}
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
                       <div className="flex flex-col text-left">
@@ -656,7 +681,71 @@ export default function AdminPage() {
             </aside>
 
             {/* COLUMN 2: RIGHT CHAT AREA (MODERATION CHAT WINDOW) */}
-            <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-gray-50/50">
+            {adminView === 'avatars' ? (
+              <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-gray-50/50 overflow-y-auto">
+                <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600">
+                      <Users size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-gray-900 tracking-wide text-sm md:text-base">
+                        Kelola Avatar User
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Tambahkan opsi avatar untuk dipilih pengguna saat masuk.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      onChange={handleUserAvatarUpload}
+                      disabled={isUploadingAvatar}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <button 
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white font-semibold rounded-lg text-sm flex items-center gap-2 transition-colors pointer-events-none"
+                    >
+                      {isUploadingAvatar ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                      ) : (
+                        <Users size={16} />
+                      )}
+                      Upload Avatar Baru
+                    </button>
+                  </div>
+                </header>
+                
+                <div className="p-6">
+                  {userAvatars.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200 border-dashed">
+                      <Users size={32} className="mx-auto text-gray-400 mb-3" />
+                      <h3 className="text-sm font-semibold text-gray-900">Belum ada avatar</h3>
+                      <p className="text-xs text-gray-500 mt-1">Upload avatar berformat PNG/JPG (Maks 2MB).</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                      {userAvatars.map(avatar => (
+                        <div key={avatar.id} className="relative group bg-white rounded-xl border border-gray-200 p-2 flex items-center justify-center aspect-square shadow-sm">
+                          <img src={avatar.url} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
+                          <button
+                            onClick={() => handleDeleteUserAvatar(avatar.id)}
+                            className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                            title="Hapus avatar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            ) : (
+              <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-gray-50/50">
               {/* Chat Area Header */}
               <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
@@ -766,6 +855,7 @@ export default function AdminPage() {
                 </form>
               </footer>
             </section>
+            )}
           </div>
         )}
       </div>
