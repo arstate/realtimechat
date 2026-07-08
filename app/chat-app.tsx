@@ -136,7 +136,12 @@ export default function HomePage() {
       const cachedTitle = localStorage.getItem('surabaya_cached_chat_title');
       const cachedIcon = localStorage.getItem('surabaya_cached_chat_icon');
       const cachedAvatars = localStorage.getItem('surabaya_cached_user_avatars');
+      const cachedChatEnabled = localStorage.getItem('surabaya_cached_chat_enabled');
+      const cachedFilterEnabled = localStorage.getItem('surabaya_cached_chat_filter_enabled');
       
+      if (cachedChatEnabled !== null) setIsChatEnabled(cachedChatEnabled === 'true');
+      if (cachedFilterEnabled !== null) setIsFilterEnabled(cachedFilterEnabled === 'true');
+
       const hasCache = cachedTitle && cachedIcon && cachedAvatars;
       
       if (hasCache) {
@@ -360,7 +365,9 @@ export default function HomePage() {
     const filterRef = ref(db, 'chat_filter_enabled');
     const unsubscribeFilter = onValue(filterRef, (snapshot) => {
       const val = snapshot.val();
-      setIsFilterEnabled(val !== false); // default to true if null/undefined
+      const isEnabled = val !== false; // default to true if null/undefined
+      setIsFilterEnabled(isEnabled);
+      localStorage.setItem('surabaya_cached_chat_filter_enabled', isEnabled.toString());
     });
 
     const configRef = ref(db, 'chat_config');
@@ -403,7 +410,9 @@ export default function HomePage() {
     const chatEnabledRef = ref(db, 'chat_enabled');
     const unsubscribeChatEnabled = onValue(chatEnabledRef, (snapshot) => {
       const val = snapshot.val();
-      setIsChatEnabled(val !== false); // default to true if null/undefined
+      const isEnabled = val !== false; // default to true if null/undefined
+      setIsChatEnabled(isEnabled);
+      localStorage.setItem('surabaya_cached_chat_enabled', isEnabled.toString());
     });
 
     return () => {
