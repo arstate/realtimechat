@@ -34,7 +34,7 @@ export const DAFTAR_KATA_KASAR: string[] = [
   "pepek", "perek", "perkosa", "piatu", "porno", "pukimak", "pussy", "qontol", "raimu",
   "runyam", "sarap", "sampah", "SARA", "saraf", "seks", "setan", "selangkang", "sempak",
   "senggama", "setubuh", "silet", "silit", "sinting", "sodomi", "sobek", "stres", "tai",
-  "telanjang", "telaso", "tete", "tewas", "titit", "togel", "toket", "tolol", "tusbol",
+  "telanjang", "telaso", "tempek", "tete", "tewas", "titit", "togel", "toket", "tolol", "tusbol",
   "tuyul", "urin", "vagina", "vulgar", "waria", "xxx", "yateam", "yatim",
 
   // --- VARIASI AKHIRAN -NE ---
@@ -65,7 +65,10 @@ export const DAFTAR_KATA_KASAR: string[] = [
   "celengan", "cocotan", "congoran", "dancokan", "dancukan", "goblokan", "idiotan", "jancokan",
   "jancukan", "jembutan", "kontolan", "kunyukan", "lontean", "memekan", "monyetan", "ngentotan",
   "pantatan", "pantekan", "pecunan", "perekan", "setanan", "silitan", "taian", "tetean",
-  "toketan", "tololan", "vaginaan", "yatiman"
+  "toketan", "tololan", "vaginaan", "yatiman",
+  // --- KATA TAMBAHAN PENGGUNA ---
+  "makmu kiper", "bawok", "bawuk", "ngentu", "bedhes", "bedes", "hancurit", "mbut", "mbot",
+  "tempik", "tmpk", "tmpek", "sutop", "sutob", "su apik", "su"
 ];
 
 // ==========================================
@@ -323,7 +326,7 @@ export const DAFTAR_OBFUSCATION: Record<string, string> = {
   "m3m3k": "memek", "m*m*k": "memek", "m.e.m.e.k": "memek", "m3m3q": "memek",
   "me-mek": "memek", "me mek": "memek", "m.3.m.3.k": "memek", "m3m3ks": "memek",
   "m3m3kz": "memek", "m3m3kx": "memek", "m3m3qs": "memek", "m3m3qz": "memek",
-  "m3m3qx": "memek",
+  "m3m3qx": "memek", "t3mp3k": "tempek", "t*mp*k": "tempek", "t.e.m.p.e.k": "tempek",
 
   // --- GOBLOK VARIATION ---
   "606106": "goblok", "g0bl0k": "goblok", "g*bl*k": "goblok", "g.o.b.l.o.k": "goblok",
@@ -358,17 +361,21 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   // --- MAKIAN ORGAN & SEXUAL ---
   "kontol": "jancok", "memek": "jancok", "ngentot": "kerja_keras", "ewe": "kerja_keras",
   "jancok": "jancok", "dancok": "jancok", "jancuk": "jancok", "dancuk": "jancok",
-  "cuk": "jancok", "cok": "jancok", "peli": "jancok", "pepek": "jancok",
+  "cuk": "jancok", "cok": "jancok", "peli": "jancok", "pepek": "jancok", "tempek": "jancok",
   "tetek": "tetek", "toket": "tetek", "nenen": "tetek", "pentil": "tetek",
   "pantek": "jancok", "pukimak": "jancok", "cukimai": "jancok", "silit": "jancok",
   "pecun": "jancok", "lonte": "jancok", "perek": "jancok", "jablay": "jancok",
   "germo": "jancok", "bispak": "jancok", "pelacur": "jancok", "sundal": "jancok",
+  "bawok": "jancok", "bawuk": "jancok", "tempik": "jancok", "tmpk": "jancok", "tmpek": "jancok",
+  "ngentu": "kerja_keras", "mbut": "jancok", "mbot": "jancok", "hancurit": "jancok",
+  "sutop": "jancok", "sutob": "jancok",
 
   // --- HEWAN & MAKIAN KOTOR ---
   "babi": "anjing", "monyet": "anjing", "kunyuk": "anjing", "celeng": "anjing",
   "bangke": "anjing", "bangkai": "anjing", "keparat": "anjing", "bedebah": "anjing",
   "anjing": "anjing", "asu": "anjing", "bajingan": "anjing", "bangsat": "anjing",
   "kampret": "anjing", "brengsek": "anjing", "berengsek": "anjing",
+  "su": "anjing", "su apik": "anjing",
 
   // --- BODOH & KEJIWAAN ---
   "goblok": "goblok", "tolol": "goblok", "bego": "goblok", "idiot": "goblok",
@@ -377,6 +384,7 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   "bejad": "goblok", "bejat": "goblok", "cacat": "goblok", "ampas": "goblok",
   "gembel": "goblok", "sampah": "goblok", "noob": "goblok", "culun": "goblok",
   "cupu": "goblok", "koruptor": "jancok", "penipu": "jancok", "maling": "jancok",
+  "bedhes": "goblok", "bedes": "goblok", "makmu kiper": "goblok",
 
   // --- TOKOH LAIN NYASAR ---
   "jokowi kontol": "prabowo", "mulyono asu": "prabowo"
