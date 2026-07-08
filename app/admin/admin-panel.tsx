@@ -1410,25 +1410,25 @@ export default function AdminPage() {
 
                       {/* Message Content Container */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className={`text-base md:text-lg lg:text-xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
+                        <div className="flex items-center gap-3.5 flex-wrap">
+                          <span className={`text-xl md:text-2xl lg:text-3xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
                             {msg.username}
                           </span>
                           {isAdminMsg ? (
-                            <span className={`px-2.5 py-0.5 text-[10px] md:text-xs font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
+                            <span className={`px-3.5 py-1 text-xs md:text-sm font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
                               Moderator
                             </span>
                           ) : (
-                            <span className={`px-2.5 py-0.5 text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
+                            <span className={`px-3.5 py-1 text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
                               Warga Surabaya
                             </span>
                           )}
-                          <span className={`text-xs md:text-sm ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
+                          <span className={`text-sm md:text-base ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
                             {formatTime(msg.timestamp)}
                           </span>
                         </div>
                         
-                        <p className={`mt-2 leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
+                        <p className={`mt-3 text-lg md:text-xl lg:text-2xl leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
                           {msg.message}
                         </p>
                       </div>

@@ -673,22 +673,28 @@ export default function HomePage() {
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]`}>
                         {/* Name Label */}
                         {!isMe && (
-                          <div className={`font-semibold mb-1 ml-1 flex flex-wrap items-center gap-1.5 ${
-                            'text-xs text-gray-600'
+                          <div className={`font-semibold mb-1.5 ml-1 flex flex-wrap items-center gap-2 ${
+                            isVideotronMode 
+                              ? 'text-sm md:text-base text-slate-300' 
+                              : 'text-xs text-gray-600'
                           }`}>
                             <span>{msg.username}</span>
                             {isAdminMsg && (
                               <span className={`rounded-full uppercase tracking-wider ${
                                 isVideotronMode 
-                                  ? 'px-2 py-0.5 text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/25' 
+                                  ? 'px-3 py-1 text-xs md:text-sm font-black bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/25' 
                                   : 'px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300'
                               }`}>
                                 ADMIN
                               </span>
                             )}
                             {msg.domicile && !isAdminMsg && (
-                              <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
-                                <MapPin size={10} className="inline mr-0.5 text-gray-400"/>
+                              <span className={`rounded-full font-bold transition-all ${
+                                isVideotronMode 
+                                  ? 'text-xs bg-slate-800 text-slate-300 px-2.5 py-1 border border-slate-700' 
+                                  : 'text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200'
+                              }`}>
+                                <MapPin size={isVideotronMode ? 12 : 10} className={`inline mr-1 ${isVideotronMode ? 'text-slate-400' : 'text-gray-400'}`}/>
                                 {msg.domicile}
                               </span>
                             )}
@@ -696,13 +702,19 @@ export default function HomePage() {
                         )}
                         
                         {isMe && (
-                          <div className={`mb-1 mr-1 flex items-center gap-1.5 ${
-                            'text-[10px] text-gray-500'
+                          <div className={`mb-1.5 mr-1 flex items-center gap-2 ${
+                            isVideotronMode 
+                              ? 'text-sm md:text-base text-slate-400' 
+                              : 'text-[10px] text-gray-500'
                           }`}>
                             <span>Anda</span>
                             {msg.domicile && (
-                              <span className="font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
-                                <MapPin size={10} className="inline mr-0.5 text-gray-400"/>
+                              <span className={`rounded-full font-bold transition-all ${
+                                isVideotronMode 
+                                  ? 'text-xs bg-slate-800 text-slate-300 px-2.5 py-1 border border-slate-700' 
+                                  : 'text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200'
+                              }`}>
+                                <MapPin size={isVideotronMode ? 12 : 10} className={`inline mr-1 ${isVideotronMode ? 'text-slate-400' : 'text-gray-400'}`}/>
                                 {msg.domicile}
                               </span>
                             )}
@@ -717,7 +729,7 @@ export default function HomePage() {
                             } ${
                               isAdminMsg
                                 ? isVideotronMode
-                                  ? 'bg-amber-950/80 text-amber-200 border border-amber-800 rounded-2xl px-6 py-4 text-lg md:text-xl font-bold'
+                                  ? 'bg-amber-950/80 text-amber-200 border border-amber-800 rounded-2xl px-8 py-5 text-xl md:text-2xl lg:text-3xl font-extrabold shadow-lg'
                                   : 'bg-amber-100 text-amber-900 border border-amber-200 rounded-xl px-4 py-2.5 text-sm'
                                 : `${bubbleColor} ${
                                     isMe 
@@ -725,7 +737,7 @@ export default function HomePage() {
                                       : 'rounded-tl-2xl rounded-tr-2xl rounded-br-2xl rounded-bl-sm'
                                   } ${
                                     isVideotronMode 
-                                      ? 'px-6 py-4 text-lg md:text-xl font-bold tracking-normal leading-relaxed border border-white/5' 
+                                      ? 'px-8 py-5 text-xl md:text-2xl lg:text-3xl font-bold tracking-normal leading-relaxed border border-white/5 shadow-lg' 
                                       : 'px-4 py-2.5 text-sm'
                                   }`
                             }`}
@@ -734,8 +746,10 @@ export default function HomePage() {
                               {msg.message}
                             </p>
                             <div 
-                              className={`text-[9px] mt-1 text-right select-none ${
-                                'text-white/70'
+                              className={`select-none mt-2 text-right ${
+                                isVideotronMode 
+                                  ? 'text-xs text-white/60 font-mono mt-2' 
+                                  : 'text-[9px] text-white/70 mt-1'
                               } ${
                                 isAdminMsg && !isVideotronMode ? 'text-amber-700/60' : ''
                               }`}
