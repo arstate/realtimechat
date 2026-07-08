@@ -318,15 +318,26 @@ export default function AdminPage() {
 
         // Beautiful swift loading animation for returning cached users
         const statuses = [
-          { text: 'Membaca konfigurasi dari cache lokal...', progress: 35 },
-          { text: 'Memverifikasi integritas aset gambar...', progress: 70 },
-          { text: 'Menyinkronkan status data real-time...', progress: 95 },
+          { text: 'Membaca konfigurasi dari cache lokal...', progress: 25 },
+          { text: 'Memverifikasi integritas aset gambar...', progress: 50 },
+          { text: 'Mengunduh pengaturan sensor & ruang obrolan...', progress: 85 },
           { text: 'Selesai!', progress: 100 }
         ];
 
         for (const step of statuses) {
           if (!isMounted) return;
           setDownloadStatus(step.text);
+          
+          if (step.progress === 85) {
+            try {
+              const chatEnabledSnap = await get(ref(db, 'chat_enabled'));
+              const filterEnabledSnap = await get(ref(db, 'chat_filter_enabled'));
+              setIsChatEnabled(chatEnabledSnap.val() !== false);
+              setIsFilterEnabled(filterEnabledSnap.val() !== false);
+            } catch (e) {
+              console.error("Error loading configs in cache flow:", e);
+            }
+          }
           
           await new Promise<void>((resolve) => {
             let current = downloadProgress;
@@ -351,15 +362,16 @@ export default function AdminPage() {
         // First-time visit: fetch assets from server and save to cache
         const statuses = [
           { text: 'Menghubungkan ke server Surabaya...', progress: 15 },
-          { text: 'Mengunduh konfigurasi ruang obrolan...', progress: 45 },
-          { text: 'Memproses & mengompresi gambar ikon...', progress: 70 },
-          { text: 'Mengunduh & mengoptimalkan kustom avatar...', progress: 90 },
+          { text: 'Mengunduh konfigurasi ruang obrolan...', progress: 35 },
+          { text: 'Memproses & mengompresi gambar ikon...', progress: 55 },
+          { text: 'Mengunduh & mengoptimalkan kustom avatar...', progress: 75 },
+          { text: 'Sinkronisasi filter obrolan & izin akses...', progress: 95 },
           { text: 'Menyimpan aset ke cache lokal...', progress: 100 }
         ];
 
         setDownloadStatus(statuses[0].text);
         setDownloadProgress(5);
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 400));
         
         setDownloadStatus(statuses[1].text);
         setDownloadProgress(25);
@@ -374,8 +386,8 @@ export default function AdminPage() {
               setDraftTitle(val.title);
               localStorage.setItem('surabaya_cached_chat_title', val.title);
             }
-            setDownloadProgress(45);
-            await new Promise(r => setTimeout(r, 400));
+            setDownloadProgress(35);
+            await new Promise(r => setTimeout(r, 300));
 
             setDownloadStatus(statuses[2].text);
             if (val.icon) {
@@ -383,8 +395,8 @@ export default function AdminPage() {
               setChatIcon(optimizedIcon);
               localStorage.setItem('surabaya_cached_chat_icon', val.icon);
             }
-            setDownloadProgress(70);
-            await new Promise(r => setTimeout(r, 400));
+            setDownloadProgress(55);
+            await new Promise(r => setTimeout(r, 300));
 
             setDownloadStatus(statuses[3].text);
             if (val.userAvatars) {
@@ -400,18 +412,31 @@ export default function AdminPage() {
             } else {
               setUserAvatars([]);
             }
-            setDownloadProgress(90);
-            await new Promise(r => setTimeout(r, 400));
+            setDownloadProgress(75);
+            await new Promise(r => setTimeout(r, 300));
           } else {
             setChatTitle('Surabaya Community Live Chat');
             setDraftTitle('Surabaya Community Live Chat');
-            setDownloadProgress(90);
+            setDownloadProgress(75);
           }
         } catch (e) {
           console.error("Error downloading from DB:", e);
         }
         
+        // Sync real-time settings BEFORE dismissing download overlay
         setDownloadStatus(statuses[4].text);
+        try {
+          const chatEnabledSnap = await get(ref(db, 'chat_enabled'));
+          const filterEnabledSnap = await get(ref(db, 'chat_filter_enabled'));
+          setIsChatEnabled(chatEnabledSnap.val() !== false);
+          setIsFilterEnabled(filterEnabledSnap.val() !== false);
+        } catch (e) {
+          console.error("Error loading chat settings in first-time flow:", e);
+        }
+        setDownloadProgress(95);
+        await new Promise(r => setTimeout(r, 300));
+        
+        setDownloadStatus(statuses[5].text);
         setDownloadProgress(100);
         await new Promise(r => setTimeout(r, 400));
         
