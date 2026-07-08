@@ -180,7 +180,10 @@ export default function HomePage() {
         if (val.userAvatars) {
           const avatarsArr = Object.keys(val.userAvatars).map(k => ({id: k, url: val.userAvatars[k]}));
           setUserAvatars(avatarsArr);
-          if (avatarsArr.length > 0 && !localStorage.getItem('surabaya_chat_avatar')) {
+          
+          const savedAvatar = typeof window !== 'undefined' ? localStorage.getItem('surabaya_chat_avatar') : null;
+          const isStandard = !savedAvatar || ['smile', 'cat', 'dog', 'bird', 'rabbit', 'bot', 'ghost', 'user'].includes(savedAvatar);
+          if (avatarsArr.length > 0 && isStandard) {
             setUserAvatar(avatarsArr[0].id);
           }
         } else {
@@ -347,29 +350,31 @@ export default function HomePage() {
 
                 
 
-                {userAvatars.length > 0 && (
-                  <div className="space-y-1.5 text-left pt-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
-                      Pilih Avatar Anda
-                    </label>
-                    <div className="flex flex-wrap gap-2 justify-center pb-2">
-                      {userAvatars.map((avatar) => (
+                <div className="space-y-1.5 text-left pt-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                    Pilih Avatar Anda
+                  </label>
+                  <div className="flex flex-wrap gap-2 justify-center pb-2 max-h-[150px] overflow-y-auto p-1 scrollbar-thin">
+                    {/* Custom Admin Uploaded Avatars Only */}
+                    {userAvatars.map((avatar) => {
+                      const isSelected = userAvatar === avatar.id;
+                      return (
                         <button
                           key={avatar.id}
                           type="button"
                           onClick={() => setUserAvatar(avatar.id)}
-                          className={`w-12 h-12 p-1 rounded-xl border transition-all duration-200 flex items-center justify-center ${
-                            userAvatar === avatar.id
-                              ? 'bg-indigo-50 border-indigo-500 shadow-sm scale-110'
+                          className={`w-11 h-11 p-0.5 rounded-xl border transition-all duration-200 flex items-center justify-center cursor-pointer overflow-hidden shrink-0 ${
+                            isSelected
+                              ? 'bg-indigo-600 border-indigo-600 shadow-md scale-110'
                               : 'bg-white border-gray-200 hover:bg-gray-50'
                           }`}
                         >
-                          <img src={avatar.url} alt="Avatar Option" className="w-full h-full object-cover rounded-lg" />
+                          <img src={avatar.url} alt="Custom Avatar" className="w-full h-full object-cover rounded-lg" />
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
                 
                 <button type="submit"
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group"

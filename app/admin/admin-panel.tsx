@@ -29,7 +29,17 @@ import {
   AlertCircle, 
   Users, 
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Smile,
+  Cat,
+  Dog,
+  Bird,
+  Rabbit,
+  Ghost,
+  Bot,
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,7 +49,196 @@ interface Message {
   username: string;
   message: string;
   timestamp: any;
+  avatar?: string;
+  color?: string;
 }
+
+const AVATARS = [
+  { id: 'smile', icon: Smile },
+  { id: 'cat', icon: Cat },
+  { id: 'dog', icon: Dog },
+  { id: 'bird', icon: Bird },
+  { id: 'rabbit', icon: Rabbit },
+  { id: 'bot', icon: Bot },
+  { id: 'ghost', icon: Ghost },
+  { id: 'user', icon: User }
+];
+
+const COLOR_THEMES = [
+  // Indigo / Purple
+  {
+    light: {
+      bg: 'bg-indigo-50/90 border-indigo-200 hover:bg-indigo-100/90 shadow-indigo-100/30',
+      borderLeft: '#4f46e5',
+      userText: 'text-indigo-900',
+      msgText: 'text-indigo-950 font-bold',
+      badge: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      timeText: 'text-indigo-600/70',
+    },
+    dark: {
+      bg: 'bg-indigo-950/40 border-indigo-500/30 hover:bg-indigo-950/50 hover:border-indigo-500/50 shadow-indigo-950/40',
+      borderLeft: '#6366f1',
+      userText: 'text-indigo-300',
+      msgText: 'text-indigo-100',
+      badge: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+      timeText: 'text-indigo-400/60',
+    }
+  },
+  // Emerald / Green
+  {
+    light: {
+      bg: 'bg-emerald-50/90 border-emerald-200 hover:bg-emerald-100/90 shadow-emerald-100/30',
+      borderLeft: '#059669',
+      userText: 'text-emerald-900',
+      msgText: 'text-emerald-950 font-bold',
+      badge: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      timeText: 'text-emerald-600/70',
+    },
+    dark: {
+      bg: 'bg-emerald-950/40 border-emerald-500/30 hover:bg-emerald-950/50 hover:border-emerald-500/50 shadow-emerald-950/40',
+      borderLeft: '#10b981',
+      userText: 'text-emerald-300',
+      msgText: 'text-emerald-100',
+      badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      timeText: 'text-emerald-400/60',
+    }
+  },
+  // Rose / Pink
+  {
+    light: {
+      bg: 'bg-rose-50/90 border-rose-200 hover:bg-rose-100/90 shadow-rose-100/30',
+      borderLeft: '#db2777',
+      userText: 'text-rose-900',
+      msgText: 'text-rose-950 font-bold',
+      badge: 'bg-rose-100 text-rose-700 border-rose-200',
+      timeText: 'text-rose-600/70',
+    },
+    dark: {
+      bg: 'bg-rose-950/40 border-rose-500/30 hover:bg-rose-950/50 hover:border-rose-500/50 shadow-rose-950/40',
+      borderLeft: '#f43f5e',
+      userText: 'text-rose-300',
+      msgText: 'text-rose-100',
+      badge: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+      timeText: 'text-rose-400/60',
+    }
+  },
+  // Cyan / Teal
+  {
+    light: {
+      bg: 'bg-cyan-50/90 border-cyan-200 hover:bg-cyan-100/90 shadow-cyan-100/30',
+      borderLeft: '#0891b2',
+      userText: 'text-cyan-900',
+      msgText: 'text-cyan-950 font-bold',
+      badge: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      timeText: 'text-cyan-600/70',
+    },
+    dark: {
+      bg: 'bg-cyan-950/40 border-cyan-500/30 hover:bg-cyan-950/50 hover:border-cyan-500/50 shadow-cyan-950/40',
+      borderLeft: '#06b6d4',
+      userText: 'text-cyan-300',
+      msgText: 'text-cyan-100',
+      badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+      timeText: 'text-cyan-400/60',
+    }
+  },
+  // Amber / Orange
+  {
+    light: {
+      bg: 'bg-amber-50/90 border-amber-200 hover:bg-amber-100/90 shadow-amber-100/30',
+      borderLeft: '#d97706',
+      userText: 'text-amber-900',
+      msgText: 'text-amber-950 font-bold',
+      badge: 'bg-amber-100 text-amber-700 border-amber-200',
+      timeText: 'text-amber-600/70',
+    },
+    dark: {
+      bg: 'bg-amber-950/45 border-amber-500/30 hover:bg-amber-950/55 hover:border-amber-500/50 shadow-amber-950/40',
+      borderLeft: '#f59e0b',
+      userText: 'text-amber-300',
+      msgText: 'text-amber-100',
+      badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      timeText: 'text-amber-400/60',
+    }
+  },
+  // Violet / Fuchsia
+  {
+    light: {
+      bg: 'bg-violet-50/90 border-violet-200 hover:bg-violet-100/90 shadow-violet-100/30',
+      borderLeft: '#7c3aed',
+      userText: 'text-violet-900',
+      msgText: 'text-violet-950 font-bold',
+      badge: 'bg-violet-100 text-violet-700 border-violet-200',
+      timeText: 'text-violet-600/70',
+    },
+    dark: {
+      bg: 'bg-violet-950/40 border-violet-500/30 hover:bg-violet-950/50 hover:border-violet-500/50 shadow-violet-950/40',
+      borderLeft: '#8b5cf6',
+      userText: 'text-violet-300',
+      msgText: 'text-violet-100',
+      badge: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
+      timeText: 'text-violet-400/60',
+    }
+  },
+  // Blue / Sky
+  {
+    light: {
+      bg: 'bg-blue-50/90 border-blue-200 hover:bg-blue-100/90 shadow-blue-100/30',
+      borderLeft: '#2563eb',
+      userText: 'text-blue-900',
+      msgText: 'text-blue-950 font-bold',
+      badge: 'bg-blue-100 text-blue-700 border-blue-200',
+      timeText: 'text-blue-600/70',
+    },
+    dark: {
+      bg: 'bg-blue-950/40 border-blue-500/30 hover:bg-blue-950/50 hover:border-blue-500/50 shadow-blue-950/40',
+      borderLeft: '#3b82f6',
+      userText: 'text-blue-300',
+      msgText: 'text-blue-100',
+      badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      timeText: 'text-blue-400/60',
+    }
+  }
+];
+
+const getThemeForMsg = (msg: Message, isLight: boolean) => {
+  const isAdminMsg = msg.senderType === 'admin';
+  
+  if (isAdminMsg) {
+    // Elegant Moderator theme (Amber / Gold Accent)
+    return {
+      bg: isLight 
+        ? 'bg-amber-50/95 border-amber-300 hover:bg-amber-100 shadow-amber-100/40' 
+        : 'bg-amber-950/30 border-amber-500/40 hover:bg-amber-950/40 hover:border-amber-500/60 shadow-amber-950/30',
+      borderLeft: '#f59e0b',
+      userText: isLight ? 'text-amber-900 font-extrabold' : 'text-amber-400 font-extrabold',
+      msgText: isLight ? 'text-amber-950 font-black' : 'text-amber-100 font-bold',
+      badge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-500/30',
+      timeText: isLight ? 'text-amber-700/60' : 'text-amber-400/60',
+    };
+  }
+
+  // Choose index based on color, or fall back to username hash
+  const color = msg.color || '';
+  let themeIdx = 0;
+  if (color.includes('blue') || color.includes('sky')) themeIdx = 6;
+  else if (color.includes('emerald') || color.includes('green')) themeIdx = 1;
+  else if (color.includes('teal') || color.includes('cyan')) themeIdx = 3;
+  else if (color.includes('rose') || color.includes('pink') || color.includes('fuchsia')) themeIdx = 2;
+  else if (color.includes('orange') || color.includes('amber')) themeIdx = 4;
+  else if (color.includes('violet') || color.includes('purple')) themeIdx = 5;
+  else if (color.includes('indigo')) themeIdx = 0;
+  else {
+    let hash = 0;
+    const str = msg.username || '';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    themeIdx = Math.abs(hash) % COLOR_THEMES.length;
+  }
+
+  const theme = COLOR_THEMES[themeIdx];
+  return isLight ? theme.light : theme.dark;
+};
 
 export default function AdminPage() {
   const [password, setPassword] = useState<string>('');
@@ -54,6 +253,7 @@ export default function AdminPage() {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState<boolean>(false);
   const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState<string | null>(null);
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
+  const [videotronTheme, setVideotronTheme] = useState<'dark' | 'light'>('dark');
   const videotronEndRef = useRef<HTMLDivElement>(null);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
@@ -116,6 +316,8 @@ export default function AdminPage() {
             username,
             message: data.message || '',
             timestamp: data.timestamp,
+            avatar: data.avatar,
+            color: data.color,
           });
         });
 
@@ -1068,11 +1270,28 @@ export default function AdminPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[#020617] flex flex-col font-sans overflow-hidden"
+            className={`fixed inset-0 z-[100] flex flex-col font-sans overflow-hidden min-h-screen transition-colors duration-300 ${
+              videotronTheme === 'light' ? 'bg-slate-50' : 'bg-slate-950'
+            }`}
           >
-            <header className="px-6 py-4 border-b border-slate-800 bg-slate-900/95 flex items-center justify-between">
+            {/* Cyber Grid Background */}
+            <div className={`absolute inset-0 bg-[size:4rem_4rem] pointer-events-none transition-all duration-300 ${
+              videotronTheme === 'light'
+                ? 'bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#fff_70%,transparent_100%)] opacity-70'
+                : 'bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40'
+            }`} />
+
+            <header className={`px-6 py-4 border-b flex items-center justify-between relative z-10 shadow-lg transition-all duration-300 ${
+              videotronTheme === 'light' 
+                ? 'border-slate-200 bg-white/95 shadow-slate-200/20' 
+                : 'border-slate-800 bg-slate-900/95 shadow-slate-950/20'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 flex items-center justify-center overflow-hidden shrink-0">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner transition-colors duration-300 ${
+                  videotronTheme === 'light'
+                    ? 'bg-indigo-100 border border-indigo-200 text-indigo-600'
+                    : 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300'
+                }`}>
                   {chatIcon ? (
                     <img src={chatIcon} alt="Icon" className="w-full h-full object-cover" />
                   ) : (
@@ -1080,71 +1299,135 @@ export default function AdminPage() {
                   )}
                 </div>
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold tracking-wide text-white">
+                  <h2 className={`text-xl md:text-2xl font-black tracking-wide flex items-center gap-2 transition-colors duration-300 ${
+                    videotronTheme === 'light' ? 'text-slate-900' : 'text-white'
+                  }`}>
                     {chatTitle}
+                    <span className="px-2.5 py-0.5 bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 text-[10px] md:text-xs font-black rounded-full uppercase tracking-widest animate-pulse">
+                      LIVE
+                    </span>
                   </h2>
                   <div className="flex items-center gap-2 text-sm mt-0.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                    <span className="text-slate-400 font-medium">
-                      {userStats.total > 0 ? (userStats.users + userStats.admins) : 0} Anggota Aktif
+                    <span className={`font-semibold transition-colors duration-300 ${
+                      videotronTheme === 'light' ? 'text-slate-600' : 'text-slate-400'
+                    }`}>
+                      {userStats.total > 0 ? (userStats.users + userStats.admins) : 0} Anggota Aktif Obrolan
                     </span>
                   </div>
                 </div>
               </div>
               
-              <button 
-                onClick={() => setShowVideotronPreview(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg flex items-center gap-2 font-medium transition-colors"
-              >
-                <ArrowLeft size={18} />
-                Keluar Preview
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Theme Toggle Button */}
+                <button
+                  onClick={() => setVideotronTheme(prev => prev === 'light' ? 'dark' : 'light')}
+                  className={`p-2.5 rounded-xl flex items-center justify-center transition-all border shadow-sm cursor-pointer ${
+                    videotronTheme === 'light'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700/50'
+                  }`}
+                  title={videotronTheme === 'light' ? "Ubah ke Mode Gelap" : "Ubah ke Mode Terang"}
+                >
+                  {videotronTheme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                </button>
+
+                {/* Minimalist Icon-only Keluar Preview Button */}
+                <button 
+                  onClick={() => setShowVideotronPreview(false)}
+                  className={`p-2.5 rounded-xl flex items-center justify-center transition-all border shadow-sm cursor-pointer ${
+                    videotronTheme === 'light'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700/50'
+                  }`}
+                  title="Keluar Preview"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-              {messages.map((msg, idx) => {
-                const isAdminMsg = msg.senderType === 'admin';
-                return (
-                  <div key={msg.id || idx} className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-2 mb-1">
-                      {isAdminMsg ? (
-                        <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30">
-                          <ShieldCheck size={16} className="stroke-[2.5]" />
+            <div className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 relative z-10 max-w-5xl mx-auto w-full scrollbar-thin transition-colors duration-300 ${
+              videotronTheme === 'light' ? 'scrollbar-thumb-slate-200' : 'scrollbar-thumb-slate-800'
+            }`}>
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
+                  <MessageSquare size={48} className={`${videotronTheme === 'light' ? 'text-slate-300' : 'text-slate-600'} stroke-[1.5] animate-bounce`} />
+                  <p className={`text-lg font-bold ${videotronTheme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Belum Ada Pesan</p>
+                  <p className={`text-sm ${videotronTheme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>Pesan dari warga Surabaya yang terkirim akan muncul di sini secara real-time.</p>
+                </div>
+              ) : (
+                messages.map((msg, idx) => {
+                  const isAdminMsg = msg.senderType === 'admin';
+                  const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
+                  const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
+                  const AvatarIcon = fallbackAvatarDef.icon;
+
+                  // Get our dynamic premium colorful theme for this bubble
+                  const isLight = videotronTheme === 'light';
+                  const t = getThemeForMsg(msg, isLight);
+
+                  return (
+                    <div 
+                      key={msg.id || idx} 
+                      className={`flex gap-4 md:gap-5 items-start backdrop-blur-md p-5 md:p-6 rounded-2xl shadow-xl transition-all duration-300 relative overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 border ${t.bg}`}
+                      style={{ borderLeft: `6px solid ${t.borderLeft}` }}
+                    >
+                      {/* Glow Overlay Effect on Hover */}
+                      <div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity pointer-events-none duration-300"
+                        style={{ backgroundColor: t.borderLeft }}
+                      />
+
+                      {/* Large User Avatar Container */}
+                      <div className="shrink-0">
+                        {isAdminMsg ? (
+                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center text-white shadow-xl border-3 border-amber-400 shrink-0">
+                            <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" />
+                          </div>
+                        ) : selectedCustomAvatar ? (
+                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-3 bg-slate-950 overflow-hidden shadow-xl shrink-0 transition-colors duration-300"
+                               style={{ borderColor: t.borderLeft }}>
+                            <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                          </div>
+                        ) : (
+                          <div 
+                            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white shadow-xl border-3 shrink-0 transition-colors duration-300"
+                            style={{ backgroundColor: t.borderLeft, borderColor: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}
+                          >
+                            <AvatarIcon className="w-10 h-10 md:w-12 md:h-12 stroke-[2]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message Content Container */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className={`text-base md:text-lg lg:text-xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
+                            {msg.username}
+                          </span>
+                          {isAdminMsg ? (
+                            <span className={`px-2.5 py-0.5 text-[10px] md:text-xs font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
+                              Moderator
+                            </span>
+                          ) : (
+                            <span className={`px-2.5 py-0.5 text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
+                              Warga Surabaya
+                            </span>
+                          )}
+                          <span className={`text-xs md:text-sm ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
+                            {formatTime(msg.timestamp)}
+                          </span>
                         </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
-                          <Users size={16} className="stroke-[2.5]" />
-                        </div>
-                      )}
-                      <span className={`text-sm md:text-base font-bold ${
-                        isAdminMsg ? 'text-amber-400' : 'text-indigo-300'
-                      }`}>
-                        {msg.username}
-                      </span>
-                      {isAdminMsg && (
-                        <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded uppercase tracking-wider">
-                          Moderator
-                        </span>
-                      )}
-                      <span className="text-xs text-slate-500 ml-2">
-                        {formatTime(msg.timestamp)}
-                      </span>
-                    </div>
-                    
-                    <div className="pl-10">
-                      <div className={`p-4 md:p-5 rounded-2xl rounded-tl-sm inline-block shadow-lg max-w-[85%] ${
-                        isAdminMsg 
-                          ? 'bg-amber-500/10 border border-amber-500/20 text-amber-100 shadow-amber-500/5' 
-                          : 'bg-slate-800/80 border border-slate-700/50 text-slate-100'
-                      }`}>
-                        <p className="text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-wrap break-words">
+                        
+                        <p className={`mt-2 leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
                           {msg.message}
                         </p>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
               <div ref={videotronEndRef} />
             </div>
           </motion.div>
