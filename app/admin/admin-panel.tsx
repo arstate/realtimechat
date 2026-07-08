@@ -285,15 +285,6 @@ export default function AdminPage() {
     async function loadAssets() {
       if (typeof window === 'undefined') return;
       
-      // Fire DB requests immediately so they resolve in the background while UI animates
-      const dbSettingsPromise = Promise.all([
-        get(ref(db, 'chat_enabled')),
-        get(ref(db, 'chat_filter_enabled'))
-      ]).catch(e => {
-        console.error("DB error in background fetch:", e);
-        return [null, null];
-      });
-      
       const cachedTitle = localStorage.getItem('surabaya_cached_chat_title');
       const cachedIcon = localStorage.getItem('surabaya_cached_chat_icon');
       const cachedAvatars = localStorage.getItem('surabaya_cached_user_avatars');
@@ -332,9 +323,8 @@ export default function AdminPage() {
 
         // Beautiful swift loading animation for returning cached users
         const statuses = [
-          { text: 'Membaca konfigurasi dari cache lokal...', progress: 25 },
-          { text: 'Memverifikasi integritas aset gambar...', progress: 50 },
-          { text: 'Mengunduh pengaturan sensor & ruang obrolan...', progress: 85 },
+          { text: 'Membaca konfigurasi dari cache lokal...', progress: 40 },
+          { text: 'Memverifikasi integritas aset gambar...', progress: 80 },
           { text: 'Selesai!', progress: 100 }
         ];
 
@@ -342,12 +332,6 @@ export default function AdminPage() {
         for (const step of statuses) {
           if (!isMounted) return;
           setDownloadStatus(step.text);
-          
-          if (step.progress === 85) {
-            const [chatEnabledSnap, filterEnabledSnap] = await dbSettingsPromise;
-            if (chatEnabledSnap) setIsChatEnabled(chatEnabledSnap.val() !== false);
-            if (filterEnabledSnap) setIsFilterEnabled(filterEnabledSnap.val() !== false);
-          }
           
           await new Promise<void>((resolve) => {
             const target = step.progress;
@@ -370,11 +354,10 @@ export default function AdminPage() {
       } else {
         // First-time visit: fetch assets from server and save to cache
         const statuses = [
-          { text: 'Menghubungkan ke server Surabaya...', progress: 15 },
-          { text: 'Mengunduh konfigurasi ruang obrolan...', progress: 35 },
-          { text: 'Memproses & mengompresi gambar ikon...', progress: 55 },
-          { text: 'Mengunduh & mengoptimalkan kustom avatar...', progress: 75 },
-          { text: 'Sinkronisasi filter obrolan & izin akses...', progress: 95 },
+          { text: 'Menghubungkan ke server Surabaya...', progress: 20 },
+          { text: 'Mengunduh konfigurasi ruang obrolan...', progress: 50 },
+          { text: 'Memproses & mengompresi gambar ikon...', progress: 75 },
+          { text: 'Mengunduh & mengoptimalkan kustom avatar...', progress: 90 },
           { text: 'Menyimpan aset ke cache lokal...', progress: 100 }
         ];
 
@@ -382,18 +365,12 @@ export default function AdminPage() {
         setDownloadProgress(5);
         
         try {
-          // Parallelize all network requests to the database
-          const configPromise = get(ref(db, 'chat_config'));
-          const [chatEnabledSnap, filterEnabledSnap] = await dbSettingsPromise;
-          
-          if (chatEnabledSnap) setIsChatEnabled(chatEnabledSnap.val() !== false);
-          if (filterEnabledSnap) setIsFilterEnabled(filterEnabledSnap.val() !== false);
+          const configSnapshot = await get(ref(db, 'chat_config'));
 
           setDownloadStatus(statuses[1].text);
           setDownloadProgress(25);
           await new Promise(r => setTimeout(r, 10));
 
-          const configSnapshot = await configPromise;
           const val = configSnapshot.val();
           if (val) {
             if (val.title) {
@@ -442,7 +419,6 @@ export default function AdminPage() {
         setDownloadProgress(95);
         await new Promise(r => setTimeout(r, 10));
         
-        setDownloadStatus(statuses[5].text);
         setDownloadProgress(100);
         await new Promise(r => setTimeout(r, 20));
         
