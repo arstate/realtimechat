@@ -214,13 +214,13 @@ export default function HomePage() {
     }
 
     setUsername(trimmedName);
-    setUserAvatar(selectedAvatar);
+    setUserAvatar(userAvatar);
     setUserColor(selectedColor);
     setIsNameSet(true);
     
     if (typeof window !== 'undefined') {
       localStorage.setItem('surabaya_chat_username', trimmedName);
-      localStorage.setItem('surabaya_chat_avatar', selectedAvatar);
+      localStorage.setItem('surabaya_chat_avatar', userAvatar);
       localStorage.setItem('surabaya_chat_color', selectedColor);
     }
   };
@@ -347,9 +347,31 @@ export default function HomePage() {
 
                 
 
-                <button
-
-                  type="submit"
+                {userAvatars.length > 0 && (
+                  <div className="space-y-1.5 text-left pt-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                      Pilih Avatar Anda
+                    </label>
+                    <div className="flex flex-wrap gap-2 justify-center pb-2">
+                      {userAvatars.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setUserAvatar(avatar.id)}
+                          className={`w-12 h-12 p-1 rounded-xl border transition-all duration-200 flex items-center justify-center ${
+                            userAvatar === avatar.id
+                              ? 'bg-indigo-50 border-indigo-500 shadow-sm scale-110'
+                              : 'bg-white border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          <img src={avatar.url} alt="Avatar Option" className="w-full h-full object-cover rounded-lg" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <button type="submit"
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group"
                 >
                   Masuk ke Obrolan
@@ -489,17 +511,23 @@ export default function HomePage() {
                       }`}
                     >
                       {/* Avatar */}
-                      <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm border ${
+                      <div className={`rounded-full flex-shrink-0 flex items-center justify-center shadow-sm ${
                         isVideotronMode 
-                          ? 'w-12 h-12 border-slate-800' 
-                          : 'w-8 h-8 border-transparent'
-                      } ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
+                          ? 'w-12 h-12 border border-slate-800' 
+                          : 'w-10 h-10'
+                      } ${
+                        isAdminMsg 
+                          ? 'bg-amber-500 text-white' 
+                          : selectedCustomAvatar 
+                            ? 'bg-transparent border-none' 
+                            : `${bubbleColor} text-white`
+                      }`}>
                         {isAdminMsg ? (
-                          <ShieldAlert size={16} />
+                          <ShieldAlert size={18} />
                         ) : selectedCustomAvatar ? (
                           <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                         ) : (
-                          <AvatarIcon size={16} />
+                          <AvatarIcon size={18} />
                         )}
                       </div>
 

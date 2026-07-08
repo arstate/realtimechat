@@ -162,6 +162,14 @@ export default function AdminPage() {
         if (val.icon) {
           setChatIcon(val.icon);
         }
+        if (val.userAvatars) {
+          const avatarsArr = Object.keys(val.userAvatars).map(k => ({id: k, url: val.userAvatars[k]}));
+          setUserAvatars(avatarsArr);
+        } else {
+          setUserAvatars([]);
+        }
+      } else {
+        setUserAvatars([]);
       }
     });
 
@@ -251,19 +259,50 @@ export default function AdminPage() {
 
     setIsUploadingAvatar(true);
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64String = event.target?.result as string;
-      try {
-        const newAvatarRef = push(ref(db, 'chat_config/userAvatars'));
-        await set(newAvatarRef, base64String);
-      } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, 'chat_config/userAvatars');
-      } finally {
-        setIsUploadingAvatar(false);
-      }
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 512;
+        const MAX_HEIGHT = 512;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const compressedBase64 = canvas.toDataURL('image/png');
+        
+        try {
+          const newAvatarRef = push(ref(db, 'chat_config/userAvatars'));
+          await set(newAvatarRef, compressedBase64);
+        } catch (error) {
+          console.error('Error uploading:', error);
+          alert('Gagal mengupload avatar.');
+        } finally {
+          setIsUploadingAvatar(false);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = (e) => {
+      console.error('FileReader error:', e);
+      setIsUploadingAvatar(false);
     };
     reader.readAsDataURL(file);
-    // clear input
     e.target.value = '';
   };
   
