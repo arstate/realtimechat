@@ -68,7 +68,8 @@ export const DAFTAR_KATA_KASAR: string[] = [
   "toketan", "tololan", "vaginaan", "yatiman",
   // --- KATA TAMBAHAN PENGGUNA ---
   "makmu kiper", "bawok", "bawuk", "ngentu", "bedhes", "bedes", "hancurit", "mbut", "mbot",
-  "tempik", "tmpk", "tmpek", "sutop", "sutob", "su apik"
+  "tempik", "tmpk", "tmpek", "sutop", "sutob", "su apik", "asoe", "mboet", "congok", "njing",
+  "patek", "kenthir", "taek", "kemplu", "arak", "jamput", "diamput"
 ];
 
 // ==========================================
@@ -281,7 +282,25 @@ export const PEMETAAN_KATEGORI_TOKOH: Record<string, string> = {
   "surabaya jancok": "surabaya_hebat",
   "surabaya jancuk": "surabaya_hebat",
   "surabaya dancok": "surabaya_hebat",
-  "surabaya dancuk": "surabaya_hebat"
+  "surabaya dancuk": "surabaya_hebat",
+
+  // --- KATA TAMBAHAN & FRASA DARI PENGGUNA ---
+  "lambemu sempal": "goblok",
+  "sobat kaya njing": "anjing",
+  "motomu njepat": "goblok",
+  "dengkulmu ringsek": "goblok",
+  "minum arak yok": "umum_baik",
+  "minum arak": "umum_baik",
+  "prabowo jelek": "prabowo",
+  "eri taek": "eri_cahyadi",
+  "cak eri taek": "eri_cahyadi",
+  "prabowo program tidak efisien": "prabowo",
+  "taek tok": "jancok",
+  "epok epok": "goblok",
+  "cah dagel": "goblok",
+  "eri epok": "eri_cahyadi",
+  "bocah kenthir": "goblok",
+  "eri kenthir": "eri_cahyadi"
 };
 
 // ==========================================
@@ -351,7 +370,15 @@ export const DAFTAR_OBFUSCATION: Record<string, string> = {
   "j4nc0kan": "jancokan", "j4nc0ksan": "jancokan", "4nj1ngan": "anjingan",
   "4nj1n6an": "anjingan", "b4j1n64nan": "bajinganan", "b4j1ng4nan": "bajinganan",
   "ng3nt0tan": "ngentotan", "n63nt0tan": "ngentotan", "m3m3kan": "memekan",
-  "g0bl0kan": "goblokan", "g0bl0qan": "goblokan"
+  "g0bl0kan": "goblokan", "g0bl0qan": "goblokan",
+
+  // --- CUSTOM OBFUSCATIONS FROM USER ---
+  "ko(nt)ol": "kontol",
+  "kont ol": "kontol",
+  "kont-ol": "kontol",
+  "ta3k": "taek",
+  "k o n t o l": "kontol",
+  "k-o-n-t-o-l": "kontol"
 };
 
 // ==========================================
@@ -368,14 +395,15 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   "germo": "jancok", "bispak": "jancok", "pelacur": "jancok", "sundal": "jancok",
   "bawok": "jancok", "bawuk": "jancok", "tempik": "jancok", "tmpk": "jancok", "tmpek": "jancok",
   "ngentu": "kerja_keras", "mbut": "jancok", "mbot": "jancok", "hancurit": "jancok",
-  "sutop": "jancok", "sutob": "jancok",
+  "sutop": "jancok", "sutob": "jancok", "mboet": "jancok", "patek": "jancok", "taek": "jancok",
+  "jamput": "jancok", "diamput": "jancok",
 
   // --- HEWAN & MAKIAN KOTOR ---
   "babi": "anjing", "monyet": "anjing", "kunyuk": "anjing", "celeng": "anjing",
   "bangke": "anjing", "bangkai": "anjing", "keparat": "anjing", "bedebah": "anjing",
   "anjing": "anjing", "asu": "anjing", "bajingan": "anjing", "bangsat": "anjing",
   "kampret": "anjing", "brengsek": "anjing", "berengsek": "anjing",
-  "su apik": "anjing",
+  "su apik": "anjing", "asoe": "anjing", "njing": "anjing",
 
   // --- BODOH & KEJIWAAN ---
   "goblok": "goblok", "tolol": "goblok", "bego": "goblok", "idiot": "goblok",
@@ -384,7 +412,11 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   "bejad": "goblok", "bejat": "goblok", "cacat": "goblok", "ampas": "goblok",
   "gembel": "goblok", "sampah": "goblok", "noob": "goblok", "culun": "goblok",
   "cupu": "goblok", "koruptor": "jancok", "penipu": "jancok", "maling": "jancok",
-  "bedhes": "goblok", "bedes": "goblok", "makmu kiper": "goblok",
+  "bedhes": "goblok", "bedes": "goblok", "makmu kiper": "goblok", "congok": "goblok",
+  "kenthir": "goblok", "kemplu": "goblok",
+
+  // --- LAIN-LAIN / ALKOHOL / NARKOBA ---
+  "arak": "umum_baik",
 
   // --- TOKOH LAIN NYASAR ---
   "jokowi kontol": "prabowo", "mulyono asu": "prabowo"

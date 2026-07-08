@@ -22,17 +22,55 @@ export function getRandomReplacement(category: string): string {
 }
 
 /**
+ * Membuat string pattern regex yang kebal terhadap spasi/simbol tersembunyi di antara huruf (obfuscation).
+ * @param word Kata dasar kotor
+ */
+function generateObfuscatedPatternString(word: string): string {
+  const charMap: Record<string, string> = {
+    'a': '[a4@]',
+    'i': '[i1l!|]',
+    'u': '[u]',
+    'e': '[e3]',
+    'o': '[o0]',
+    's': '[s5$]',
+    'g': '[g69]',
+    't': '[t7]',
+    'b': '[b8]',
+    'c': '[c]',
+    'k': '[k]',
+    'n': '[n]',
+    'm': '[m]',
+    'p': '[p]',
+    'r': '[r]',
+    'd': '[d]',
+    'h': '[h]',
+    'j': '[j]',
+    'l': '[l1i|]',
+    'y': '[y]',
+    'w': '[w]'
+  };
+
+  const regexParts = [];
+  for (let i = 0; i < word.length; i++) {
+    const char = word[i].toLowerCase();
+    if (char === ' ') {
+      regexParts.push('\\s+');
+      continue;
+    }
+    const pattern = charMap[char] || char.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
+    regexParts.push(pattern);
+  }
+
+  // Izinkan karakter pemisah berupa spasi, tanda hubung, titik, garis bawah, bintang, atau tanda kurung di antara huruf
+  const separator = '[\\s\\-_.*()]*';
+  return regexParts.join(separator);
+}
+
+/**
  * Melakukan pembersihan Leet Speak dan normalisasi teks dasar.
- * Misalnya mengubah angka/simbol mirip ke huruf normal agar mudah dideteksi.
  */
 export function normalizeText(text: string): string {
-  let normalized = text.toLowerCase();
-
-  // Bersihkan karakter pemisah biasa yang sering dipakai buat mengelabui parser
-  // Misalnya "k.o.n.t.o.l" -> "kontol", "k_o_n_t_o_l" -> "kontol"
-  // Tapi kita lakukan pencocokan string spesifik dahulu dari daftar obfuscation.
-  
-  return normalized;
+  return text.toLowerCase();
 }
 
 /**
@@ -44,8 +82,7 @@ export function filterChatMessage(text: string): string {
   
   let filteredText = text;
 
-  // 1. Tangani obfuscation berbasis kata/frasa utuh terlebih dahulu
-  // Urutkan key obfuscation dari yang terpanjang ke terpendek agar tidak bertabrakan
+  // 1. Tangani obfuscation berbasis kata/frasa utuh terlebih dahulu dari kamus statis
   const sortedObfuscations = Object.keys(DAFTAR_OBFUSCATION).sort((a, b) => b.length - a.length);
   for (const key of sortedObfuscations) {
     const targetWord = DAFTAR_OBFUSCATION[key];
@@ -54,33 +91,52 @@ export function filterChatMessage(text: string): string {
   }
 
   // 2. Saring frasa tokoh/instansi terfokus (misal "eri kontol", "prabowo anjing", dll)
-  // Urutkan frasa dari yang terpanjang ke terpendek
   const sortedFrasaTokoh = Object.keys(PEMETAAN_KATEGORI_TOKOH).sort((a, b) => b.length - a.length);
   for (const frasa of sortedFrasaTokoh) {
     const category = PEMETAAN_KATEGORI_TOKOH[frasa];
     const escapedFrasa = frasa.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
-    // Mencocokkan frasa secara global, tidak sensitif huruf besar/kecil
     const regex = new RegExp(escapedFrasa, 'gi');
     if (regex.test(filteredText)) {
       filteredText = filteredText.replace(regex, () => getRandomReplacement(category));
     }
   }
 
-  // 3. Saring kata dasar kotor mandiri (misal "kontol", "memek", "goblok", dll)
+  // 3. Saring kata dasar kotor mandiri secara dinamis dengan obfuscated pattern matching
   const sortedKataDasar = Object.keys(KATA_DASAR_KATEGORI).sort((a, b) => b.length - a.length);
   for (const word of sortedKataDasar) {
     const category = KATA_DASAR_KATEGORI[word];
-    const escapedWord = word.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
-    // Gunakan regex global dengan batas kata (\b) jika memungkinkan, 
-    // atau pencocokan string langsung untuk menghindari bypass dengan imbuhan
-    const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
-    if (regex.test(filteredText)) {
-      filteredText = filteredText.replace(regex, () => getRandomReplacement(category));
+    
+    // Kata kasar yang sangat sensitif/vulgar dan dijamin unik (tidak ada di dalam kata bersih normal)
+    const safeWithoutBoundary = [
+      "kontol", "memek", "jancok", "jancuk", "dancok", "dancuk", 
+      "ngentot", "pepek", "tempik", "tmpk", "tmpek", "itil", "pukimak", 
+      "bawok", "bawuk", "bajingan", "goblok", "tolol", "brengsek", 
+      "berengsek", "bangsat", "mboet", "congok"
+    ].includes(word);
+
+    const regexPattern = generateObfuscatedPatternString(word);
+    
+    if (safeWithoutBoundary) {
+      // Sangat aman dicocokkan langsung tanpa boundary agar jika diselipkan tetap kena filter
+      const regex = new RegExp(regexPattern, 'gi');
+      if (regex.test(filteredText)) {
+        filteredText = filteredText.replace(regex, () => getRandomReplacement(category));
+      }
     } else {
-      // Fallback pencocokan non-boundary untuk kata kasar yang sangat vulgar di dalam kata lain
-      const regexNoBoundary = new RegExp(escapedWord, 'gi');
-      if (regexNoBoundary.test(filteredText)) {
-        filteredText = filteredText.replace(regexNoBoundary, () => getRandomReplacement(category));
+      // Menggunakan word boundary agar tidak salah menyaring kata bersih (misal: "mbut" di "lembut"/"rambut", atau "arak" di "masyarakat")
+      const regex = new RegExp(`\\b${regexPattern}\\b`, 'gi');
+      if (regex.test(filteredText)) {
+        filteredText = filteredText.replace(regex, () => getRandomReplacement(category));
+      } else {
+        // Fallback boundary custom untuk menangani spaced-out kata (misalnya: " m b u t " atau " a r a k ")
+        const fallbackRegex = new RegExp(`(?:\\s|^|[^a-zA-Z0-9])${regexPattern}(?:\\s|$|[^a-zA-Z0-9])`, 'gi');
+        if (fallbackRegex.test(filteredText)) {
+          filteredText = filteredText.replace(fallbackRegex, (match) => {
+            const firstChar = match.match(/^[^a-zA-Z0-9]/)?.[0] || '';
+            const lastChar = match.match(/[^a-zA-Z0-9]$/)?.[0] || '';
+            return firstChar + getRandomReplacement(category) + lastChar;
+          });
+        }
       }
     }
   }
