@@ -32,6 +32,9 @@ import {
   Ghost,
   Bot,
   Tv,
+  MapPin,
+  Search,
+  ArrowLeft,
   Lock
 } from 'lucide-react';
 import Link from 'next/link';
@@ -44,8 +47,14 @@ interface Message {
   timestamp: any;
   avatar?: string;
   color?: string;
+  domicile?: string;
 }
 
+const DOMICILE_LIST = [
+  'Surabaya', 'Sidoarjo', 'Gresik', 'Mojokerto', 'Malang', 
+  'Pasuruan', 'Bangkalan', 'Lamongan', 'Batu', 'Madiun', 
+  'Kediri', 'Blitar', 'Probolinggo', 'Lainnya'
+];
 
 const AVATARS = [
   { id: 'smile', icon: Smile },
@@ -77,8 +86,13 @@ export default function HomePage() {
   const [username, setUsername] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('smile');
   const [userColor, setUserColor] = useState<string>('');
+  const [userDomicile, setUserDomicile] = useState<string>('Surabaya');
   const [isNameSet, setIsNameSet] = useState<boolean>(false);
   const [nameInput, setNameInput] = useState<string>('');
+  
+  const [loginStep, setLoginStep] = useState<number>(1);
+  const [domicileSearch, setDomicileSearch] = useState<string>('');
+  
   const [selectedAvatar, setSelectedAvatar] = useState<string>('smile');
   const [selectedColor, setSelectedColor] = useState<string>('');
 
@@ -105,10 +119,12 @@ export default function HomePage() {
     const savedName = localStorage.getItem('surabaya_chat_username');
     const savedAvatar = localStorage.getItem('surabaya_chat_avatar') || 'smile';
     const savedColor = localStorage.getItem('surabaya_chat_color') || COLORS[Math.floor(Math.random() * COLORS.length)];
+    const savedDomicile = localStorage.getItem('surabaya_chat_domicile') || 'Surabaya';
     if (savedName) {
       setUsername(savedName);
       setUserAvatar(savedAvatar);
       setUserColor(savedColor);
+      setUserDomicile(savedDomicile);
       setIsNameSet(true);
     } else {
       setSelectedColor(savedColor);
@@ -139,6 +155,7 @@ export default function HomePage() {
             timestamp: data.timestamp,
             avatar: data.avatar,
             color: data.color,
+            domicile: data.domicile,
           });
         });
         setMessages(msgs);
@@ -206,8 +223,8 @@ export default function HomePage() {
   }, []);
 
   
-  const handleJoinChat = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleJoinChat = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const trimmedName = nameInput.trim();
     if (!trimmedName) return;
 
@@ -225,6 +242,7 @@ export default function HomePage() {
       localStorage.setItem('surabaya_chat_username', trimmedName);
       localStorage.setItem('surabaya_chat_avatar', userAvatar);
       localStorage.setItem('surabaya_chat_color', selectedColor);
+      localStorage.setItem('surabaya_chat_domicile', userDomicile);
     }
   };
 
@@ -251,6 +269,7 @@ export default function HomePage() {
         message: filteredMsg,
         avatar: userAvatar,
         color: userColor,
+        domicile: userDomicile,
         timestamp: serverTimestamp(),
       });
 
@@ -267,11 +286,13 @@ export default function HomePage() {
   const confirmExitChat = () => {
     setUsername('');
     setIsNameSet(false);
+    setLoginStep(1);
     setShowExitConfirm(false);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('surabaya_chat_username');
       localStorage.removeItem('surabaya_chat_avatar');
       localStorage.removeItem('surabaya_chat_color');
+      localStorage.removeItem('surabaya_chat_domicile');
     }
   };
 
@@ -325,61 +346,164 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <form onSubmit={handleJoinChat} className="w-full space-y-4">
-                <div className="space-y-1.5 text-left">
-                  <label htmlFor="name-input" className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
-                    Nama / Nickname Anda
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500">
-                      <User size={18} />
-                    </span>
-                    <input
-                      id="name-input"
-                      type="text"
-                      required
-                      placeholder="Masukkan nama..."
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      maxLength={30}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
-
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (loginStep === 1) {
+                  if (!nameInput.trim()) return;
+                  if (nameInput.trim().length > 30) {
+                    alert("Nama terlalu panjang (maksimum 30 karakter)");
+                    return;
+                  }
+                  setLoginStep(2);
+                } else if (loginStep === 2) {
+                  setLoginStep(3);
+                } else if (loginStep === 3) {
+                  handleJoinChat();
+                }
+              }} className="w-full space-y-4">
                 
-
-                <div className="space-y-1.5 text-left pt-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
-                    Pilih Avatar Anda
-                  </label>
-                  <div className="flex flex-wrap gap-2 justify-center pb-2 max-h-[150px] overflow-y-auto p-1 scrollbar-thin">
-                    {/* Custom Admin Uploaded Avatars Only */}
-                    {userAvatars.map((avatar) => {
-                      const isSelected = userAvatar === avatar.id;
-                      return (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setUserAvatar(avatar.id)}
-                          className={`w-11 h-11 p-0.5 rounded-xl border transition-all duration-200 flex items-center justify-center cursor-pointer overflow-hidden shrink-0 ${
-                            isSelected
-                              ? 'bg-indigo-600 border-indigo-600 shadow-md scale-110'
-                              : 'bg-white border-gray-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          <img src={avatar.url} alt="Custom Avatar" className="w-full h-full object-cover rounded-lg" />
-                        </button>
-                      );
-                    })}
+                <div className="flex justify-between items-center mb-6">
+                  {loginStep > 1 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setLoginStep(loginStep - 1)}
+                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+                  )}
+                  <div className="flex gap-2 flex-1 justify-center">
+                    {[1, 2, 3].map((step) => (
+                      <div 
+                        key={step} 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          loginStep === step ? 'w-8 bg-indigo-600' : 
+                          loginStep > step ? 'w-4 bg-indigo-300' : 'w-4 bg-gray-200'
+                        }`}
+                      />
+                    ))}
                   </div>
+                  {loginStep > 1 && <div className="w-9" />} {/* Spacer to balance the back button */}
                 </div>
+
+                <AnimatePresence mode="wait">
+                  {loginStep === 1 && (
+                    <motion.div
+                      key="step1"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-1.5 text-left min-h-[160px]"
+                    >
+                      <label htmlFor="name-input" className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                        Nama / Nickname Anda
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500">
+                          <User size={18} />
+                        </span>
+                        <input
+                          id="name-input"
+                          type="text"
+                          required
+                          placeholder="Masukkan nama..."
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          maxLength={30}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {loginStep === 2 && (
+                    <motion.div
+                      key="step2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-1.5 text-left min-h-[160px]"
+                    >
+                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                        Pilih Avatar Anda
+                      </label>
+                      <div className="flex flex-wrap gap-2 justify-center pb-2 max-h-[150px] overflow-y-auto p-1 scrollbar-thin">
+                        {userAvatars.length > 0 ? (
+                          userAvatars.map((avatar) => {
+                            const isSelected = userAvatar === avatar.id;
+                            return (
+                              <button
+                                key={avatar.id}
+                                type="button"
+                                onClick={() => setUserAvatar(avatar.id)}
+                                className={`w-14 h-14 p-0.5 rounded-xl border transition-all duration-200 flex items-center justify-center cursor-pointer overflow-hidden shrink-0 ${
+                                  isSelected
+                                    ? 'bg-indigo-600 border-indigo-600 shadow-md scale-110'
+                                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                                }`}
+                              >
+                                <img src={avatar.url} alt="Custom Avatar" className="w-full h-full object-cover rounded-lg" />
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="text-sm text-gray-500 text-center w-full py-4">Belum ada avatar dari admin. Lanjutkan saja.</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {loginStep === 3 && (
+                    <motion.div
+                      key="step3"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-3 text-left min-h-[160px]"
+                    >
+                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                        Pilih Domisili
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                          <Search size={16} />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Cari kota..."
+                          value={domicileSearch}
+                          onChange={(e) => setDomicileSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1 scrollbar-thin">
+                        {DOMICILE_LIST.filter(city => city.toLowerCase().includes(domicileSearch.toLowerCase())).map(city => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => setUserDomicile(city)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                              userDomicile === city
+                                ? 'bg-indigo-600 text-white shadow-md'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            }`}
+                          >
+                            <MapPin size={14} className={userDomicile === city ? 'text-white' : 'text-gray-400'} />
+                            {city}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
                 <button type="submit"
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group mt-4"
                 >
-                  Masuk ke Obrolan
+                  {loginStep === 3 ? 'Masuk ke Obrolan' : 'Lanjut'}
                   <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
               </form>
@@ -539,10 +663,10 @@ export default function HomePage() {
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]`}>
                         {/* Name Label */}
                         {!isMe && (
-                          <span className={`font-semibold mb-1 ml-1 flex items-center gap-1.5 ${
+                          <div className={`font-semibold mb-1 ml-1 flex flex-wrap items-center gap-1.5 ${
                             'text-xs text-gray-600'
                           }`}>
-                            {msg.username}
+                            <span>{msg.username}</span>
                             {isAdminMsg && (
                               <span className={`rounded-full uppercase tracking-wider ${
                                 isVideotronMode 
@@ -552,15 +676,27 @@ export default function HomePage() {
                                 ADMIN
                               </span>
                             )}
-                          </span>
+                            {msg.domicile && !isAdminMsg && (
+                              <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
+                                <MapPin size={10} className="inline mr-0.5 text-gray-400"/>
+                                {msg.domicile}
+                              </span>
+                            )}
+                          </div>
                         )}
                         
                         {isMe && (
-                          <span className={`mb-1 mr-1 ${
+                          <div className={`mb-1 mr-1 flex items-center gap-1.5 ${
                             'text-[10px] text-gray-500'
                           }`}>
-                            Anda
-                          </span>
+                            <span>Anda</span>
+                            {msg.domicile && (
+                              <span className="font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
+                                <MapPin size={10} className="inline mr-0.5 text-gray-400"/>
+                                {msg.domicile}
+                              </span>
+                            )}
+                          </div>
                         )}
 
                         {/* Chat Bubble */}
