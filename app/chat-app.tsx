@@ -93,6 +93,7 @@ export default function HomePage() {
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
+  const [userAvatarIcon, setUserAvatarIcon] = useState<string>('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -174,6 +175,7 @@ export default function HomePage() {
       if (val) {
         if (val.title) setChatTitle(val.title);
         if (val.icon) setChatIcon(val.icon);
+        if (val.userAvatar) setUserAvatarIcon(val.userAvatar);
       }
     });
 
@@ -293,8 +295,12 @@ export default function HomePage() {
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
             
             <div className="flex flex-col items-center text-center space-y-6">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
-                <MessageCircle size={32} className="stroke-[1.75]" />
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner overflow-hidden shrink-0">
+                {chatIcon ? (
+                  <img src={chatIcon} alt="Icon" className="w-full h-full object-cover" />
+                ) : (
+                  <MessageCircle size={32} className="stroke-[1.75]" />
+                )}
               </div>
 
               <div>
@@ -329,30 +335,7 @@ export default function HomePage() {
                 </div>
 
 
-                <div className="space-y-1.5 text-left pt-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
-                    Pilih Avatar Anda
-                  </label>
-                  <div className="flex flex-wrap gap-2 justify-center pb-2">
-                    {AVATARS.map((avatar) => {
-                      const Icon = avatar.icon;
-                      return (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedAvatar(avatar.id)}
-                          className={`p-2.5 rounded-xl border transition-all duration-200 ${
-                            selectedAvatar === avatar.id
-                              ? 'bg-indigo-50 border-indigo-500 text-indigo-600 shadow-sm scale-110'
-                              : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                          }`}
-                        >
-                          <Icon size={20} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                
 
                 <button
 
@@ -391,12 +374,16 @@ export default function HomePage() {
                 : 'border-gray-200 bg-gray-50/50 text-gray-900'
             }`}>
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${
                   isVideotronMode 
                     ? 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300' 
                     : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
                 }`}>
-                  <MessageSquare size={20} className="stroke-[2]" />
+                  {chatIcon ? (
+                    <img src={chatIcon} alt="Icon" className="w-full h-full object-cover" />
+                  ) : (
+                    <MessageSquare size={20} className="stroke-[2]" />
+                  )}
                 </div>
                 <div>
                   <h2 className={`font-bold tracking-wide ${
@@ -498,6 +485,8 @@ export default function HomePage() {
                       } ${isAdminMsg ? 'bg-amber-500' : bubbleColor}`}>
                         {isAdminMsg ? (
                           <ShieldAlert size={16} />
+                        ) : userAvatarIcon ? (
+                          <img src={userAvatarIcon} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                         ) : (
                           <AvatarIcon size={16} />
                         )}

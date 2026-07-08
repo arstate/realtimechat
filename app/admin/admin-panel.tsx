@@ -58,6 +58,7 @@ export default function AdminPage() {
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
+  const [userAvatarIcon, setUserAvatarIcon] = useState<string>('');
   const [draftTitle, setDraftTitle] = useState<string>('Surabaya Community Live Chat');
   
   // Analytics
@@ -227,6 +228,32 @@ export default function AdminPage() {
         await set(ref(db, 'chat_config/icon'), base64String);
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, 'chat_config/icon');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUserAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Tolong unggah file gambar (PNG/JPG)');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran gambar terlalu besar. Maksimal 2MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64String = event.target?.result as string;
+      try {
+        await set(ref(db, 'chat_config/userAvatar'), base64String);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, 'chat_config/userAvatar');
       }
     };
     reader.readAsDataURL(file);
@@ -501,6 +528,27 @@ export default function AdminPage() {
                           type="file"
                           accept="image/png, image/jpeg"
                           onChange={handleIconUpload}
+                          className="text-[10px] text-gray-600 w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        />
+                      </div>
+                    </div>
+
+                    
+                    {/* User Avatar Upload */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-gray-500 font-semibold block">Avatar Default User (PNG/JPG)</span>
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                          {userAvatarIcon ? (
+                            <img src={userAvatarIcon} alt="User Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <Users size={16} className="text-gray-400" />
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg"
+                          onChange={handleUserAvatarUpload}
                           className="text-[10px] text-gray-600 w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         />
                       </div>
