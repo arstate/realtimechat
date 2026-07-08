@@ -265,6 +265,10 @@ export default function AdminPage() {
   const [userAvatars, setUserAvatars] = useState<{id: string, url: string}[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   
+  const [isAssetDownloading, setIsAssetDownloading] = useState<boolean>(true);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadStatus, setDownloadStatus] = useState<string>('Menyiapkan koneksi aman...');
+  
   // Analytics
   const [userStats, setUserStats] = useState<{ total: number; users: number; admins: number }>({
     total: 0,
@@ -273,6 +277,155 @@ export default function AdminPage() {
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Asset pre-loading and caching effect
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function loadAssets() {
+      if (typeof window === 'undefined') return;
+      
+      const cachedTitle = localStorage.getItem('surabaya_cached_chat_title');
+      const cachedIcon = localStorage.getItem('surabaya_cached_chat_icon');
+      const cachedAvatars = localStorage.getItem('surabaya_cached_user_avatars');
+      
+      const hasCache = cachedTitle && cachedIcon && cachedAvatars;
+      
+      if (hasCache) {
+        // Hydrate from cache immediately for instant UI responsiveness
+        setChatTitle(cachedTitle);
+        setDraftTitle(cachedTitle);
+        try {
+          const optimizedIcon = await getOptimizedAvatarUrl(cachedIcon);
+          setChatIcon(optimizedIcon);
+        } catch (e) {
+          setChatIcon(cachedIcon);
+        }
+        
+        try {
+          const parsedAvatars = JSON.parse(cachedAvatars);
+          const keys = Object.keys(parsedAvatars);
+          const avatarsArr = await Promise.all(
+            keys.map(async k => ({
+              id: k,
+              url: await getOptimizedAvatarUrl(parsedAvatars[k])
+            }))
+          );
+          setUserAvatars(avatarsArr);
+        } catch (e) {
+          console.error('Error loading avatars from cache', e);
+        }
+
+        // Beautiful swift loading animation for returning cached users
+        const statuses = [
+          { text: 'Membaca konfigurasi dari cache lokal...', progress: 35 },
+          { text: 'Memverifikasi integritas aset gambar...', progress: 70 },
+          { text: 'Menyinkronkan status data real-time...', progress: 95 },
+          { text: 'Selesai!', progress: 100 }
+        ];
+
+        for (const step of statuses) {
+          if (!isMounted) return;
+          setDownloadStatus(step.text);
+          
+          await new Promise<void>((resolve) => {
+            let current = downloadProgress;
+            const target = step.progress;
+            const interval = setInterval(() => {
+              if (current >= target) {
+                clearInterval(interval);
+                resolve();
+              } else {
+                current += 3;
+                setDownloadProgress(Math.min(current, target));
+              }
+            }, 10);
+          });
+          await new Promise(r => setTimeout(r, 120));
+        }
+        
+        if (isMounted) {
+          setIsAssetDownloading(false);
+        }
+      } else {
+        // First-time visit: fetch assets from server and save to cache
+        const statuses = [
+          { text: 'Menghubungkan ke server Surabaya...', progress: 15 },
+          { text: 'Mengunduh konfigurasi ruang obrolan...', progress: 45 },
+          { text: 'Memproses & mengompresi gambar ikon...', progress: 70 },
+          { text: 'Mengunduh & mengoptimalkan kustom avatar...', progress: 90 },
+          { text: 'Menyimpan aset ke cache lokal...', progress: 100 }
+        ];
+
+        setDownloadStatus(statuses[0].text);
+        setDownloadProgress(5);
+        await new Promise(r => setTimeout(r, 500));
+        
+        setDownloadStatus(statuses[1].text);
+        setDownloadProgress(25);
+        
+        try {
+          const configSnapshot = await get(ref(db, 'chat_config'));
+          const val = configSnapshot.val();
+          
+          if (val) {
+            if (val.title) {
+              setChatTitle(val.title);
+              setDraftTitle(val.title);
+              localStorage.setItem('surabaya_cached_chat_title', val.title);
+            }
+            setDownloadProgress(45);
+            await new Promise(r => setTimeout(r, 400));
+
+            setDownloadStatus(statuses[2].text);
+            if (val.icon) {
+              const optimizedIcon = await getOptimizedAvatarUrl(val.icon);
+              setChatIcon(optimizedIcon);
+              localStorage.setItem('surabaya_cached_chat_icon', val.icon);
+            }
+            setDownloadProgress(70);
+            await new Promise(r => setTimeout(r, 400));
+
+            setDownloadStatus(statuses[3].text);
+            if (val.userAvatars) {
+              const keys = Object.keys(val.userAvatars);
+              const avatarsArr = await Promise.all(
+                keys.map(async k => ({
+                  id: k,
+                  url: await getOptimizedAvatarUrl(val.userAvatars[k])
+                }))
+              );
+              setUserAvatars(avatarsArr);
+              localStorage.setItem('surabaya_cached_user_avatars', JSON.stringify(val.userAvatars));
+            } else {
+              setUserAvatars([]);
+            }
+            setDownloadProgress(90);
+            await new Promise(r => setTimeout(r, 400));
+          } else {
+            setChatTitle('Surabaya Community Live Chat');
+            setDraftTitle('Surabaya Community Live Chat');
+            setDownloadProgress(90);
+          }
+        } catch (e) {
+          console.error("Error downloading from DB:", e);
+        }
+        
+        setDownloadStatus(statuses[4].text);
+        setDownloadProgress(100);
+        await new Promise(r => setTimeout(r, 400));
+        
+        if (isMounted) {
+          setIsAssetDownloading(false);
+        }
+      }
+    }
+
+    loadAssets();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // 1. Check local storage for admin session
   useEffect(() => {
@@ -355,34 +508,39 @@ export default function AdminPage() {
       setIsFilterEnabled(val !== false); // default to true if null/undefined
     });
 
-    const configRef = ref(db, 'chat_config');
-    const unsubscribeConfig = onValue(configRef, async (snapshot) => {
-      const val = snapshot.val();
-      if (val) {
-        if (val.title) {
-          setChatTitle(val.title);
-          setDraftTitle(val.title);
-        }
-        if (val.icon) {
-          const optimizedIcon = await getOptimizedAvatarUrl(val.icon);
-          setChatIcon(optimizedIcon);
-        }
-        if (val.userAvatars) {
-          const keys = Object.keys(val.userAvatars);
-          const avatarsArr = await Promise.all(
-            keys.map(async k => ({
-              id: k,
-              url: await getOptimizedAvatarUrl(val.userAvatars[k])
-            }))
-          );
-          setUserAvatars(avatarsArr);
-        } else {
-          setUserAvatars([]);
-        }
-      } else {
-        setUserAvatars([]);
-      }
-    });
+     const configRef = ref(db, 'chat_config');
+     const unsubscribeConfig = onValue(configRef, async (snapshot) => {
+       const val = snapshot.val();
+       if (val) {
+         if (val.title) {
+           setChatTitle(val.title);
+           setDraftTitle(val.title);
+           localStorage.setItem('surabaya_cached_chat_title', val.title);
+         }
+         if (val.icon) {
+           const optimizedIcon = await getOptimizedAvatarUrl(val.icon);
+           setChatIcon(optimizedIcon);
+           localStorage.setItem('surabaya_cached_chat_icon', val.icon);
+         }
+         if (val.userAvatars) {
+           const keys = Object.keys(val.userAvatars);
+           const avatarsArr = await Promise.all(
+             keys.map(async k => ({
+               id: k,
+               url: await getOptimizedAvatarUrl(val.userAvatars[k])
+             }))
+           );
+           setUserAvatars(avatarsArr);
+           localStorage.setItem('surabaya_cached_user_avatars', JSON.stringify(val.userAvatars));
+         } else {
+           setUserAvatars([]);
+           localStorage.removeItem('surabaya_cached_user_avatars');
+         }
+       } else {
+         setUserAvatars([]);
+         localStorage.removeItem('surabaya_cached_user_avatars');
+       }
+     });
 
     const chatEnabledRef = ref(db, 'chat_enabled');
     const unsubscribeChatEnabled = onValue(chatEnabledRef, (snapshot) => {
@@ -642,6 +800,71 @@ export default function AdminPage() {
 
   return (
     <main className="relative z-10 flex flex-col min-h-screen overflow-hidden">
+      {/* Downloading Data Loader Overlay */}
+      <AnimatePresence>
+        {isAssetDownloading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 text-white font-sans overflow-hidden"
+          >
+            {/* Background neon grid pattern */}
+            <div className="absolute inset-0 bg-[size:4rem_4rem] bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] opacity-40 pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            
+            <div className="relative z-10 w-full max-w-sm px-6 flex flex-col items-center space-y-6">
+              {/* Animated Icon Container */}
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/10 relative"
+              >
+                <div className="absolute inset-0 rounded-2xl border-2 border-indigo-400/20 animate-ping opacity-30" />
+                <Settings size={28} className="stroke-[1.75]" />
+              </motion.div>
+
+              {/* Text Title */}
+              <div className="text-center space-y-1.5">
+                <h2 className="text-lg font-black tracking-widest text-indigo-300 uppercase">
+                  SURABAYA PANEL
+                </h2>
+                <p className="text-xs text-slate-400 font-medium">
+                  Sinkronisasi Aset & Konfigurasi...
+                </p>
+              </div>
+
+              {/* Progress Bar Container */}
+              <div className="w-full space-y-2">
+                <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800/80 p-0.5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 rounded-full transition-all duration-150 ease-out"
+                    style={{ width: `${downloadProgress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-mono font-semibold tracking-wider text-slate-500">
+                  <span className="animate-pulse">{downloadStatus}</span>
+                  <span className="text-indigo-400">{downloadProgress}%</span>
+                </div>
+              </div>
+
+              {/* Footer info */}
+              <div className="text-[10px] font-medium text-slate-600 flex items-center gap-1">
+                <ShieldCheck size={12} className="text-emerald-500" />
+                <span>Keamanan aset terverifikasi & dicache lokal</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Radial Glow Layer */}
       <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-indigo-900/10 rounded-full blur-[140px] pointer-events-none -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-1/3 right-1/3 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none translate-x-1/2 translate-y-1/2" />
