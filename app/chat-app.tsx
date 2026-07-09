@@ -12,7 +12,8 @@ import {
   get,
   set,
   update,
-  onDisconnect
+  onDisconnect,
+  equalTo
 } from 'firebase/database';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { filterChatMessage } from '@/lib/chatFilter';
@@ -39,7 +40,8 @@ import {
   MapPin,
   Search,
   ArrowLeft,
-  Lock
+  Lock,
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -94,6 +96,8 @@ export default function HomePage() {
   const [userColor, setUserColor] = useState<string>('');
   const [userDomicile, setUserDomicile] = useState<string>('Surabaya');
   const [isNameSet, setIsNameSet] = useState<boolean>(false);
+  const [phoneInput, setPhoneInput] = useState<string>('');
+  const [isCheckingPhone, setIsCheckingPhone] = useState<boolean>(false);
   const [nameInput, setNameInput] = useState<string>('');
   
   const [loginStep, setLoginStep] = useState<number>(1);
@@ -270,7 +274,8 @@ export default function HomePage() {
     }
 
     loadAssets();
-    return () => {
+  
+  return () => {
       isMounted = false;
     };
   }, []);
@@ -325,6 +330,7 @@ export default function HomePage() {
       try {
         await update(userRef, {
           id: userId,
+          phone: phoneInput,
           username,
           avatar: userAvatar,
           color: userColor,
@@ -454,6 +460,76 @@ export default function HomePage() {
   }, []);
 
   
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginStep === 1) {
+      const trimmedPhone = phoneInput.trim();
+      if (!trimmedPhone) return;
+      if (!/^[0-9+]{9,15}$/.test(trimmedPhone)) {
+        alert("Format nomor telepon tidak valid");
+        return;
+      }
+      setIsCheckingPhone(true);
+      try {
+        const usersRef = ref(db, 'users');
+        const snapshot = await get(usersRef);
+        
+        let existingUserKey = null;
+        let existingUserData = null;
+        
+        if (snapshot.exists()) {
+          const allUsersData = snapshot.val();
+          for (const key of Object.keys(allUsersData)) {
+            if (allUsersData[key] && allUsersData[key].phone === trimmedPhone) {
+              existingUserKey = key;
+              existingUserData = allUsersData[key];
+              break;
+            }
+          }
+        }
+        
+        if (existingUserKey && existingUserData) {
+          // User already exists, log them in directly
+          setUserId(existingUserKey);
+          setUsername(existingUserData.username);
+          setUserAvatar(existingUserData.avatar);
+          setUserColor(existingUserData.color || selectedColor);
+          setUserDomicile(existingUserData.domicile);
+          setIsNameSet(true);
+          
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('surabaya_chat_user_id', existingUserKey);
+            localStorage.setItem('surabaya_chat_username', existingUserData.username);
+            localStorage.setItem('surabaya_chat_avatar', existingUserData.avatar);
+            localStorage.setItem('surabaya_chat_color', existingUserData.color || selectedColor);
+            localStorage.setItem('surabaya_chat_domicile', existingUserData.domicile);
+            localStorage.setItem('surabaya_chat_phone', trimmedPhone);
+          }
+        } else {
+          // New user, move to next step
+          setLoginStep(2);
+        }
+      } catch (error) {
+        console.error("Failed to check phone number", error);
+        alert("Gagal mengecek nomor telepon, coba lagi.");
+      } finally {
+        setIsCheckingPhone(false);
+      }
+    } else if (loginStep === 2) {
+      if (!nameInput.trim()) return;
+      if (nameInput.trim().length > 30) {
+        alert("Nama terlalu panjang (maksimum 30 karakter)");
+        return;
+      }
+      setLoginStep(3);
+    } else if (loginStep === 3) {
+      setLoginStep(4);
+    } else if (loginStep === 4) {
+      handleJoinChat();
+    }
+  };
+
+
   const handleJoinChat = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmedName = nameInput.trim();
@@ -474,7 +550,23 @@ export default function HomePage() {
       localStorage.setItem('surabaya_chat_avatar', userAvatar);
       localStorage.setItem('surabaya_chat_color', selectedColor);
       localStorage.setItem('surabaya_chat_domicile', userDomicile);
+      localStorage.setItem('surabaya_chat_phone', phoneInput);
     }
+
+    // Save to Firebase Realtime Database for new accounts
+    const userRef = ref(db, `users/${userId}`);
+    set(userRef, {
+      username: trimmedName,
+      phone: phoneInput.trim(),
+      avatar: userAvatar,
+      color: selectedColor,
+      domicile: userDomicile,
+      isBanned: false,
+      banUntil: null,
+      createdAt: Date.now()
+    }).catch(err => {
+      console.error("Gagal menyimpan data pengguna ke database:", err);
+    });
   };
 
 
@@ -516,6 +608,7 @@ export default function HomePage() {
   
   const confirmExitChat = () => {
     setUsername('');
+    setPhoneInput('');
     setIsNameSet(false);
     setLoginStep(1);
     setShowExitConfirm(false);
@@ -524,6 +617,8 @@ export default function HomePage() {
       localStorage.removeItem('surabaya_chat_avatar');
       localStorage.removeItem('surabaya_chat_color');
       localStorage.removeItem('surabaya_chat_domicile');
+      localStorage.removeItem('surabaya_chat_phone');
+      localStorage.removeItem('surabaya_chat_user_id');
     }
   };
 
@@ -666,21 +761,7 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (loginStep === 1) {
-                  if (!nameInput.trim()) return;
-                  if (nameInput.trim().length > 30) {
-                    alert("Nama terlalu panjang (maksimum 30 karakter)");
-                    return;
-                  }
-                  setLoginStep(2);
-                } else if (loginStep === 2) {
-                  setLoginStep(3);
-                } else if (loginStep === 3) {
-                  handleJoinChat();
-                }
-              }} className="w-full space-y-4">
+              <form onSubmit={handleLoginSubmit} className="w-full space-y-4">
                 
                 <div className="flex justify-between items-center mb-6">
                   {loginStep > 1 && (
@@ -693,7 +774,7 @@ export default function HomePage() {
                     </button>
                   )}
                   <div className="flex gap-2 flex-1 justify-center">
-                    {[1, 2, 3].map((step) => (
+                    {[1, 2, 3, 4].map((step) => (
                       <div 
                         key={step} 
                         className={`h-2 rounded-full transition-all duration-300 ${
@@ -708,6 +789,39 @@ export default function HomePage() {
 
                 <AnimatePresence mode="wait">
                   {loginStep === 1 && (
+                    <motion.div
+                      key="step1_phone"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-1.5 text-left min-h-[160px]"
+                    >
+                      <label htmlFor="phone-input" className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
+                        Nomor Telepon
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <Phone size={18} className="text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                        </div>
+                        <input
+                          id="phone-input"
+                          type="tel"
+                          placeholder="Contoh: 08123456789"
+                          required
+                          value={phoneInput}
+                          onChange={(e) => setPhoneInput(e.target.value)}
+                          maxLength={15}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                        />
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-2 ml-1 leading-tight">
+                        Nomor telepon digunakan untuk menyimpan dan menghubungkan kembali akun Anda.
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {loginStep === 2 && (
                     <motion.div
                       key="step1"
                       initial={{ opacity: 0, x: 20 }}
@@ -737,7 +851,7 @@ export default function HomePage() {
                     </motion.div>
                   )}
 
-                  {loginStep === 2 && (
+                  {loginStep === 3 && (
                     <motion.div
                       key="step2"
                       initial={{ opacity: 0, x: 20 }}
@@ -775,7 +889,7 @@ export default function HomePage() {
                     </motion.div>
                   )}
 
-                  {loginStep === 3 && (
+                  {loginStep === 4 && (
                     <motion.div
                       key="step3"
                       initial={{ opacity: 0, x: 20 }}
@@ -820,10 +934,10 @@ export default function HomePage() {
                   )}
                 </AnimatePresence>
                 
-                <button type="submit"
+                <button type="submit" disabled={isCheckingPhone}
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group mt-4"
                 >
-                  {loginStep === 3 ? 'Masuk ke Obrolan' : 'Lanjut'}
+                  {loginStep === 4 ? 'Masuk ke Obrolan' : (isCheckingPhone ? 'Memeriksa...' : 'Lanjut')}
                   <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
               </form>

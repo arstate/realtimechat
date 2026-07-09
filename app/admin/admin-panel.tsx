@@ -42,7 +42,9 @@ import {
   User,
   Sun,
   Moon,
-  ChevronDown
+  ChevronDown,
+  Minus,
+  Plus
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -258,6 +260,7 @@ export default function AdminPage() {
   const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState<string | null>(null);
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
   const [videotronTheme, setVideotronTheme] = useState<'dark' | 'light'>('dark');
+  const [videotronScale, setVideotronScale] = useState<number>(100);
   const videotronEndRef = useRef<HTMLDivElement>(null);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
@@ -1377,6 +1380,7 @@ export default function AdminPage() {
                                 <img src={userAvatars.find(a => a.id === user.avatar)?.url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} alt="Avatar" className="w-8 h-8 rounded-full bg-gray-100 object-cover" />
                                 <div>
                                   <div className="font-semibold text-gray-900">{user.username}</div>
+                                  <div className="text-xs text-gray-500 font-mono mt-0.5">{user.phone || '-'}</div>
                                   <div className="text-xs text-gray-400">{user.domicile || 'Surabaya'}</div>
                                 </div>
                               </div>
@@ -1795,6 +1799,17 @@ export default function AdminPage() {
               </div>
               
               <div className="flex items-center gap-3">
+                {/* Scale controls */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${
+                  videotronTheme === 'light'
+                    ? 'bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-slate-800 border-slate-700/50 text-slate-200'
+                }`}>
+                  <button onClick={() => setVideotronScale(prev => Math.max(50, prev - 10))} className="hover:text-indigo-500 transition-colors cursor-pointer p-0.5"><Minus size={16} /></button>
+                  <span className="text-sm font-semibold min-w-[4ch] text-center">{videotronScale}%</span>
+                  <button onClick={() => setVideotronScale(prev => Math.min(200, prev + 10))} className="hover:text-indigo-500 transition-colors cursor-pointer p-0.5"><Plus size={16} /></button>
+                </div>
+
                 {/* Theme Toggle Button */}
                 <button
                   onClick={() => setVideotronTheme(prev => prev === 'light' ? 'dark' : 'light')}
@@ -1823,88 +1838,93 @@ export default function AdminPage() {
               </div>
             </header>
 
-            <div className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 relative z-10 max-w-5xl mx-auto w-full scrollbar-thin transition-colors duration-300 ${
+            <div className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 relative z-10 mx-auto w-full scrollbar-thin transition-colors duration-300 ${
               videotronTheme === 'light' ? 'scrollbar-thumb-slate-200' : 'scrollbar-thumb-slate-800'
             }`}>
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
-                  <MessageSquare size={48} className={`${videotronTheme === 'light' ? 'text-slate-300' : 'text-slate-600'} stroke-[1.5] animate-bounce`} />
-                  <p className={`text-lg font-bold ${videotronTheme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Belum Ada Pesan</p>
-                  <p className={`text-sm ${videotronTheme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>Pesan dari warga Surabaya yang terkirim akan muncul di sini secara real-time.</p>
-                </div>
-              ) : (
-                messages.map((msg, idx) => {
-                  const isAdminMsg = msg.senderType === 'admin';
-                  const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
-                  const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
-                  const AvatarIcon = fallbackAvatarDef.icon;
+              <div 
+                className="max-w-5xl mx-auto w-full space-y-6 transition-transform duration-300"
+                style={{ zoom: videotronScale / 100 }}
+              >
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
+                    <MessageSquare size={48} className={`${videotronTheme === 'light' ? 'text-slate-300' : 'text-slate-600'} stroke-[1.5] animate-bounce`} />
+                    <p className={`text-lg font-bold ${videotronTheme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Belum Ada Pesan</p>
+                    <p className={`text-sm ${videotronTheme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>Pesan dari warga Surabaya yang terkirim akan muncul di sini secara real-time.</p>
+                  </div>
+                ) : (
+                  messages.map((msg, idx) => {
+                    const isAdminMsg = msg.senderType === 'admin';
+                    const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
+                    const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
+                    const AvatarIcon = fallbackAvatarDef.icon;
 
-                  // Get our dynamic premium colorful theme for this bubble
-                  const isLight = videotronTheme === 'light';
-                  const t = getThemeForMsg(msg, isLight);
+                    // Get our dynamic premium colorful theme for this bubble
+                    const isLight = videotronTheme === 'light';
+                    const t = getThemeForMsg(msg, isLight);
 
-                  return (
-                    <div 
-                      key={msg.id || idx} 
-                      className={`flex gap-4 md:gap-5 items-start backdrop-blur-md p-5 md:p-6 rounded-2xl shadow-xl transition-all duration-300 relative overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 border ${t.bg}`}
-                      style={{ borderLeft: `6px solid ${t.borderLeft}` }}
-                    >
-                      {/* Glow Overlay Effect on Hover */}
+                    return (
                       <div 
-                        className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity pointer-events-none duration-300"
-                        style={{ backgroundColor: t.borderLeft }}
-                      />
+                        key={msg.id || idx} 
+                        className={`flex gap-4 md:gap-5 items-start backdrop-blur-md p-5 md:p-6 rounded-2xl shadow-xl transition-all duration-300 relative overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 border ${t.bg}`}
+                        style={{ borderLeft: `6px solid ${t.borderLeft}` }}
+                      >
+                        {/* Glow Overlay Effect on Hover */}
+                        <div 
+                          className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity pointer-events-none duration-300"
+                          style={{ backgroundColor: t.borderLeft }}
+                        />
 
-                      {/* Large User Avatar Container */}
-                      <div className="shrink-0">
-                        {isAdminMsg ? (
-                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center text-white shadow-xl border-3 border-amber-400 shrink-0">
-                            <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" />
-                          </div>
-                        ) : selectedCustomAvatar ? (
-                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-3 bg-slate-950 overflow-hidden shadow-xl shrink-0 transition-colors duration-300"
-                               style={{ borderColor: t.borderLeft }}>
-                            <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-                          </div>
-                        ) : (
-                          <div 
-                            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white shadow-xl border-3 shrink-0 transition-colors duration-300"
-                            style={{ backgroundColor: t.borderLeft, borderColor: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}
-                          >
-                            <AvatarIcon className="w-10 h-10 md:w-12 md:h-12 stroke-[2]" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Message Content Container */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3.5 flex-wrap">
-                          <span className={`text-xl md:text-2xl lg:text-3xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
-                            {msg.username}
-                          </span>
+                        {/* Large User Avatar Container */}
+                        <div className="shrink-0">
                           {isAdminMsg ? (
-                            <span className={`px-3.5 py-1 text-xs md:text-sm font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
-                              Moderator
-                            </span>
+                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center text-white shadow-xl border-3 border-amber-400 shrink-0">
+                              <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" />
+                            </div>
+                          ) : selectedCustomAvatar ? (
+                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-3 bg-slate-950 overflow-hidden shadow-xl shrink-0 transition-colors duration-300"
+                                 style={{ borderColor: t.borderLeft }}>
+                              <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                            </div>
                           ) : (
-                            <span className={`px-3.5 py-1 text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
-                              Warga Surabaya
-                            </span>
+                            <div 
+                              className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white shadow-xl border-3 shrink-0 transition-colors duration-300"
+                              style={{ backgroundColor: t.borderLeft, borderColor: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}
+                            >
+                              <AvatarIcon className="w-10 h-10 md:w-12 md:h-12 stroke-[2]" />
+                            </div>
                           )}
-                          <span className={`text-sm md:text-base ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
-                            {formatTime(msg.timestamp)}
-                          </span>
                         </div>
-                        
-                        <p className={`mt-3 text-lg md:text-xl lg:text-2xl leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
-                          {msg.message}
-                        </p>
+
+                        {/* Message Content Container */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3.5 flex-wrap">
+                            <span className={`text-xl md:text-2xl lg:text-3xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
+                              {msg.username}
+                            </span>
+                            {isAdminMsg ? (
+                              <span className={`px-3.5 py-1 text-xs md:text-sm font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
+                                Moderator
+                              </span>
+                            ) : (
+                              <span className={`px-3.5 py-1 text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
+                                Warga Surabaya
+                              </span>
+                            )}
+                            <span className={`text-sm md:text-base ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
+                              {formatTime(msg.timestamp)}
+                            </span>
+                          </div>
+                          
+                          <p className={`mt-3 text-lg md:text-xl lg:text-2xl leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
+                            {msg.message}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={videotronEndRef} />
+                    );
+                  })
+                )}
+                <div ref={videotronEndRef} />
+              </div>
             </div>
           </motion.div>
         )}
