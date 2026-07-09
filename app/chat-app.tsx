@@ -115,6 +115,8 @@ export default function HomePage() {
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
+  const [maxMessagesPerUser, setMaxMessagesPerUser] = useState<number | null>(null);
+  const [userMessageCount, setUserMessageCount] = useState<number>(0);
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
   const [userAvatars, setUserAvatars] = useState<{id: string, url: string}[]>([]);
@@ -311,10 +313,13 @@ export default function HomePage() {
     const banRef = ref(db, `users/${userId}`);
     const unsubscribeBan = onValue(banRef, (snapshot) => {
       const data = snapshot.val();
-      if (data && data.isBanned) {
-        setBanInfo({ isBanned: true, banUntil: data.banUntil });
-      } else {
-        setBanInfo({ isBanned: false, banUntil: null });
+      if (data) {
+        if (data.isBanned) {
+          setBanInfo({ isBanned: true, banUntil: data.banUntil });
+        } else {
+          setBanInfo({ isBanned: false, banUntil: null });
+        }
+        setUserMessageCount(data.messageCount || 0);
       }
     });
 
@@ -452,9 +457,16 @@ export default function HomePage() {
       localStorage.setItem('surabaya_cached_chat_enabled', isEnabled.toString());
     });
 
+    const maxMsgsRef = ref(db, 'max_messages_per_user');
+    const unsubscribeMaxMsgs = onValue(maxMsgsRef, (snapshot) => {
+      const val = snapshot.val();
+      setMaxMessagesPerUser(val !== null ? val : null);
+    });
+
     return () => {
       unsubscribeFilter();
       unsubscribeChatEnabled();
+      unsubscribeMaxMsgs();
       unsubscribeConfig();
     };
   }, []);
@@ -563,6 +575,7 @@ export default function HomePage() {
       domicile: userDomicile,
       isBanned: false,
       banUntil: null,
+      messageCount: 0,
       createdAt: Date.now()
     }).catch(err => {
       console.error("Gagal menyimpan data pengguna ke database:", err);
@@ -574,6 +587,11 @@ export default function HomePage() {
     e.preventDefault();
     const trimmedMessage = messageInput.trim();
     if (!trimmedMessage || !isChatEnabled) return;
+
+    if (maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser) {
+      alert(`Anda telah mencapai batas maksimum pengiriman pesan (${maxMessagesPerUser} pesan).`);
+      return;
+    }
 
     if (trimmedMessage.length > 1000) {
       alert("Pesan terlalu panjang (maksimum 1000 karakter)");
@@ -595,7 +613,12 @@ export default function HomePage() {
         domicile: userDomicile,
         timestamp: serverTimestamp(),
       });
-
+      
+      if (userId) {
+        await update(ref(db, `users/${userId}`), {
+          messageCount: userMessageCount + 1
+        });
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'global_messages');
     }
@@ -1200,7 +1223,7 @@ export default function HomePage() {
                     type="text"
                     required
                     maxLength={1000}
-                    placeholder={`Menulis sebagai ${username}...`}
+                    placeholder={(maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser) ? `Batas pesan harian tercapai` : `Menulis sebagai ${username}...`}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
@@ -1211,7 +1234,7 @@ export default function HomePage() {
                   />
                   <button
                     type="submit"
-                    disabled={!messageInput.trim() || !isChatEnabled}
+                    disabled={(!messageInput.trim() || !isChatEnabled || (maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser))}
                     className={`bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
                       'p-3'
                     }`}
