@@ -1429,7 +1429,6 @@ export default function AdminPage() {
                                 <div>
                                   <div className="font-semibold text-gray-900">{user.username}</div>
                                   <div className="text-xs text-gray-500 font-mono mt-0.5">{user.phone || '-'}</div>
-                                  <div className="text-xs text-gray-400">{user.domicile || 'Surabaya'}</div>
                                 </div>
                               </div>
                             </td>

@@ -37,8 +37,6 @@ import {
   Ghost,
   Bot,
   Tv,
-  MapPin,
-  Search,
   ArrowLeft,
   Lock,
   Phone
@@ -54,14 +52,7 @@ interface Message {
   isEdited?: boolean;
   avatar?: string;
   color?: string;
-  domicile?: string;
 }
-
-const DOMICILE_LIST = [
-  'Surabaya', 'Sidoarjo', 'Gresik', 'Mojokerto', 'Malang', 
-  'Pasuruan', 'Bangkalan', 'Lamongan', 'Batu', 'Madiun', 
-  'Kediri', 'Blitar', 'Probolinggo', 'Lainnya'
-];
 
 const AVATARS = [
   { id: 'smile', icon: Smile },
@@ -95,14 +86,12 @@ export default function HomePage() {
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; banUntil: number | null }>({ isBanned: false, banUntil: null });
   const [userAvatar, setUserAvatar] = useState<string>('smile');
   const [userColor, setUserColor] = useState<string>('');
-  const [userDomicile, setUserDomicile] = useState<string>('Surabaya');
   const [isNameSet, setIsNameSet] = useState<boolean>(false);
   const [phoneInput, setPhoneInput] = useState<string>('');
   const [isCheckingPhone, setIsCheckingPhone] = useState<boolean>(false);
   const [nameInput, setNameInput] = useState<string>('');
   
   const [loginStep, setLoginStep] = useState<number>(1);
-  const [domicileSearch, setDomicileSearch] = useState<string>('');
   
   const [selectedAvatar, setSelectedAvatar] = useState<string>('smile');
   const [selectedColor, setSelectedColor] = useState<string>('');
@@ -304,12 +293,10 @@ export default function HomePage() {
     const savedName = localStorage.getItem('surabaya_chat_username');
     const savedAvatar = localStorage.getItem('surabaya_chat_avatar') || 'smile';
     const savedColor = localStorage.getItem('surabaya_chat_color') || COLORS[Math.floor(Math.random() * COLORS.length)];
-    const savedDomicile = localStorage.getItem('surabaya_chat_domicile') || 'Surabaya';
     if (savedName) {
       setUsername(savedName);
       setUserAvatar(savedAvatar);
       setUserColor(savedColor);
-      setUserDomicile(savedDomicile);
       setIsNameSet(true);
     } else {
       setSelectedColor(savedColor);
@@ -348,7 +335,6 @@ export default function HomePage() {
           username,
           avatar: userAvatar,
           color: userColor,
-          domicile: userDomicile,
           isOnline: true,
           lastActive: serverTimestamp()
         });
@@ -361,7 +347,7 @@ export default function HomePage() {
       }
     };
     updatePresence();
-  }, [isNameSet, userId, username, userAvatar, userColor, userDomicile]);
+  }, [isNameSet, userId, username, userAvatar, userColor]);
 
 
 
@@ -388,7 +374,6 @@ export default function HomePage() {
             isEdited: data.isEdited,
             avatar: data.avatar,
             color: data.color,
-            domicile: data.domicile,
           });
         });
         setMessages(msgs);
@@ -516,7 +501,6 @@ export default function HomePage() {
           setUsername(existingUserData.username);
           setUserAvatar(existingUserData.avatar);
           setUserColor(existingUserData.color || selectedColor);
-          setUserDomicile(existingUserData.domicile);
           setIsNameSet(true);
           
           if (typeof window !== 'undefined') {
@@ -524,7 +508,6 @@ export default function HomePage() {
             localStorage.setItem('surabaya_chat_username', existingUserData.username);
             localStorage.setItem('surabaya_chat_avatar', existingUserData.avatar);
             localStorage.setItem('surabaya_chat_color', existingUserData.color || selectedColor);
-            localStorage.setItem('surabaya_chat_domicile', existingUserData.domicile);
             localStorage.setItem('surabaya_chat_phone', trimmedPhone);
           }
         } else {
@@ -545,8 +528,6 @@ export default function HomePage() {
       }
       setLoginStep(3);
     } else if (loginStep === 3) {
-      setLoginStep(4);
-    } else if (loginStep === 4) {
       handleJoinChat();
     }
   };
@@ -571,7 +552,6 @@ export default function HomePage() {
       localStorage.setItem('surabaya_chat_username', trimmedName);
       localStorage.setItem('surabaya_chat_avatar', userAvatar);
       localStorage.setItem('surabaya_chat_color', selectedColor);
-      localStorage.setItem('surabaya_chat_domicile', userDomicile);
       localStorage.setItem('surabaya_chat_phone', phoneInput);
     }
 
@@ -582,7 +562,6 @@ export default function HomePage() {
       phone: phoneInput.trim(),
       avatar: userAvatar,
       color: selectedColor,
-      domicile: userDomicile,
       isBanned: false,
       banUntil: null,
       messageCount: 0,
@@ -656,7 +635,6 @@ export default function HomePage() {
         message: filteredMsg,
         avatar: userAvatar,
         color: userColor,
-        domicile: userDomicile,
         timestamp: serverTimestamp(),
       });
       
@@ -685,7 +663,6 @@ export default function HomePage() {
       localStorage.removeItem('surabaya_chat_username');
       localStorage.removeItem('surabaya_chat_avatar');
       localStorage.removeItem('surabaya_chat_color');
-      localStorage.removeItem('surabaya_chat_domicile');
       localStorage.removeItem('surabaya_chat_phone');
       localStorage.removeItem('surabaya_chat_user_id');
     }
@@ -843,7 +820,7 @@ export default function HomePage() {
                     </button>
                   )}
                   <div className="flex gap-2 flex-1 justify-center">
-                    {[1, 2, 3, 4].map((step) => (
+                    {[1, 2, 3].map((step) => (
                       <div 
                         key={step} 
                         className={`h-2 rounded-full transition-all duration-300 ${
@@ -957,56 +934,12 @@ export default function HomePage() {
                       </div>
                     </motion.div>
                   )}
-
-                  {loginStep === 4 && (
-                    <motion.div
-                      key="step3"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-3 text-left min-h-[160px]"
-                    >
-                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 block ml-1">
-                        Pilih Domisili
-                      </label>
-                      <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
-                          <Search size={16} />
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Cari kota..."
-                          value={domicileSearch}
-                          onChange={(e) => setDomicileSearch(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1 scrollbar-thin">
-                        {DOMICILE_LIST.filter(city => city.toLowerCase().includes(domicileSearch.toLowerCase())).map(city => (
-                          <button
-                            key={city}
-                            type="button"
-                            onClick={() => setUserDomicile(city)}
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                              userDomicile === city
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                            <MapPin size={14} className={userDomicile === city ? 'text-white' : 'text-gray-400'} />
-                            {city}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
                 </AnimatePresence>
                 
                 <button type="submit" disabled={isCheckingPhone}
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all duration-200 group mt-4"
                 >
-                  {loginStep === 4 ? 'Masuk ke Obrolan' : (isCheckingPhone ? 'Memeriksa...' : 'Lanjut')}
+                  {loginStep === 3 ? 'Masuk ke Obrolan' : (isCheckingPhone ? 'Memeriksa...' : 'Lanjut')}
                   <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
               </form>
@@ -1181,16 +1114,6 @@ export default function HomePage() {
                                 ADMIN
                               </span>
                             )}
-                            {msg.domicile && !isAdminMsg && (
-                              <span className={`rounded-full font-bold transition-all ${
-                                isVideotronMode 
-                                  ? 'text-xs bg-slate-800 text-slate-300 px-2.5 py-1 border border-slate-700' 
-                                  : 'text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200'
-                              }`}>
-                                <MapPin size={isVideotronMode ? 12 : 10} className={`inline mr-1 ${isVideotronMode ? 'text-slate-400' : 'text-gray-400'}`}/>
-                                {msg.domicile}
-                              </span>
-                            )}
                           </div>
                         )}
                         
@@ -1201,16 +1124,6 @@ export default function HomePage() {
                               : 'text-[10px] text-gray-500'
                           }`}>
                             <span>Anda</span>
-                            {msg.domicile && (
-                              <span className={`rounded-full font-bold transition-all ${
-                                isVideotronMode 
-                                  ? 'text-xs bg-slate-800 text-slate-300 px-2.5 py-1 border border-slate-700' 
-                                  : 'text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200'
-                              }`}>
-                                <MapPin size={isVideotronMode ? 12 : 10} className={`inline mr-1 ${isVideotronMode ? 'text-slate-400' : 'text-gray-400'}`}/>
-                                {msg.domicile}
-                              </span>
-                            )}
                           </div>
                         )}
 
