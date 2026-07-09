@@ -1221,17 +1221,17 @@ export default function AdminPage() {
                         <span className="text-xs font-semibold text-gray-800">Batas Pesan Per User</span>
                         <span className="text-[10px] text-gray-500 leading-tight">Maksimal pesan yang bisa dikirim oleh satu akun. Kosongkan untuk tanpa batas.</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="relative flex items-center">
                         <input
                           type="number"
                           value={draftMaxMessages}
                           onChange={(e) => setDraftMaxMessages(e.target.value)}
                           placeholder="Contoh: 1, 5, 10"
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500"
+                          className="w-full border border-gray-200 rounded-lg pl-3 pr-20 py-2 text-sm focus:outline-none focus:border-indigo-500 bg-white"
                         />
                         <button
                           onClick={handleUpdateMaxMessages}
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                          className="absolute right-1 top-1 bottom-1 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-semibold rounded-md transition-colors flex items-center justify-center"
                         >
                           Simpan
                         </button>
