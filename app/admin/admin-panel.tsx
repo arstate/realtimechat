@@ -44,7 +44,11 @@ import {
   Moon,
   ChevronDown,
   Minus,
-  Plus
+  Plus,
+  Upload,
+  Eye,
+  EyeOff,
+  Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -261,7 +265,38 @@ export default function AdminPage() {
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
   const [videotronTheme, setVideotronTheme] = useState<'dark' | 'light'>('dark');
   const [videotronScale, setVideotronScale] = useState<number>(100);
+  const [videotronBg, setVideotronBg] = useState<string>('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920');
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState<boolean>(false);
+  const [eventTitle, setEventTitle] = useState<string>('SURABAYA COMMUNITY SHARING CONCERT');
+  const [eventTitleSize, setEventTitleSize] = useState<number>(44);
+  const [videotronLogoLeft, setVideotronLogoLeft] = useState<string>('');
+  const [videotronLogoRight, setVideotronLogoRight] = useState<string>('');
+  const [videotronLogoSize, setVideotronLogoSize] = useState<number>(80);
+  const [videotronQrCodeUrl, setVideotronQrCodeUrl] = useState<string>('');
+  const [videotronSupportedByText, setVideotronSupportedByText] = useState<string>('SUPPORTED BY');
+  const [eventTitleColor, setEventTitleColor] = useState<string>('#ffffff');
+  const [videotronSponsorTextColor, setVideotronSponsorTextColor] = useState<string>('#ffffff');
+  const [videotronSponsorTextSize, setVideotronSponsorTextSize] = useState<number>(12);
+  const [videotronQrTextColor, setVideotronQrTextColor] = useState<string>('#ffffff');
+  const [videotronQrTextSize, setVideotronQrTextSize] = useState<number>(9);
+  const [videotronChatBgMode, setVideotronChatBgMode] = useState<'blur' | 'solid'>('blur');
+  const [videotronChatBgColor, setVideotronChatBgColor] = useState<string>('#0f172a');
+  const [videotronChatBgOpacity, setVideotronChatBgOpacity] = useState<number>(30);
+  const [videotronChatBgBlur, setVideotronChatBgBlur] = useState<number>(20);
+  const [videotronChatBorderColor, setVideotronChatBorderColor] = useState<string>('#ffffff');
+  const [videotronChatBorderOpacity, setVideotronChatBorderOpacity] = useState<number>(10);
+  const [videotronQrSize, setVideotronQrSize] = useState<number>(130);
+  const [videotronQrXOffset, setVideotronQrXOffset] = useState<number>(0);
+  const [videotronQrYOffset, setVideotronQrYOffset] = useState<number>(0);
+  const [videotronBgSize, setVideotronBgSize] = useState<string>('cover');
+  const [videotronBlur, setVideotronBlur] = useState<number>(2);
+  const [videotronLogoBgEnabled, setVideotronLogoBgEnabled] = useState<boolean>(true);
+  const [videotronLogoInnerScale, setVideotronLogoInnerScale] = useState<number>(100);
+  const [videotronQrBgEnabled, setVideotronQrBgEnabled] = useState<boolean>(true);
+  const [videotronSponsorBgEnabled, setVideotronSponsorBgEnabled] = useState<boolean>(true);
+  const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
   const videotronEndRef = useRef<HTMLDivElement>(null);
+  const lastVideotronConfigRef = useRef<any>(null);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
   const [maxMessagesPerUser, setMaxMessagesPerUser] = useState<number | null>(null);
@@ -598,6 +633,142 @@ export default function AdminPage() {
       unsubscribeUsers();
     };
   }, [isAdminLoggedIn]);
+
+  // 4. Real-time Videotron Config Listener
+  useEffect(() => {
+    if (!isAdminLoggedIn) return;
+
+    const configRef = ref(db, 'videotron_config');
+    const unsubscribe = onValue(configRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        lastVideotronConfigRef.current = val;
+        if (val.videotronTheme !== undefined) setVideotronTheme(val.videotronTheme);
+        if (val.videotronScale !== undefined) setVideotronScale(val.videotronScale);
+        if (val.videotronBg !== undefined) setVideotronBg(val.videotronBg);
+        if (val.eventTitle !== undefined) setEventTitle(val.eventTitle);
+        if (val.eventTitleSize !== undefined) setEventTitleSize(val.eventTitleSize);
+        if (val.videotronLogoLeft !== undefined) setVideotronLogoLeft(val.videotronLogoLeft);
+        if (val.videotronLogoRight !== undefined) setVideotronLogoRight(val.videotronLogoRight);
+        if (val.videotronLogoSize !== undefined) setVideotronLogoSize(val.videotronLogoSize);
+        if (val.videotronQrCodeUrl !== undefined) setVideotronQrCodeUrl(val.videotronQrCodeUrl);
+        if (val.videotronSupportedByText !== undefined) setVideotronSupportedByText(val.videotronSupportedByText);
+        if (val.videotronQrSize !== undefined) setVideotronQrSize(val.videotronQrSize);
+        if (val.videotronQrXOffset !== undefined) setVideotronQrXOffset(val.videotronQrXOffset);
+        if (val.videotronQrYOffset !== undefined) setVideotronQrYOffset(val.videotronQrYOffset);
+        if (val.videotronBgSize !== undefined) setVideotronBgSize(val.videotronBgSize);
+        if (val.videotronBlur !== undefined) setVideotronBlur(val.videotronBlur);
+        if (val.videotronLogoBgEnabled !== undefined) setVideotronLogoBgEnabled(val.videotronLogoBgEnabled);
+        if (val.videotronLogoInnerScale !== undefined) setVideotronLogoInnerScale(val.videotronLogoInnerScale);
+        if (val.videotronQrBgEnabled !== undefined) setVideotronQrBgEnabled(val.videotronQrBgEnabled);
+        if (val.videotronSponsorBgEnabled !== undefined) setVideotronSponsorBgEnabled(val.videotronSponsorBgEnabled);
+        if (val.eventTitleColor !== undefined) setEventTitleColor(val.eventTitleColor);
+        if (val.videotronSponsorTextColor !== undefined) setVideotronSponsorTextColor(val.videotronSponsorTextColor);
+        if (val.videotronSponsorTextSize !== undefined) setVideotronSponsorTextSize(val.videotronSponsorTextSize);
+        if (val.videotronQrTextColor !== undefined) setVideotronQrTextColor(val.videotronQrTextColor);
+        if (val.videotronQrTextSize !== undefined) setVideotronQrTextSize(val.videotronQrTextSize);
+        if (val.videotronChatBgMode !== undefined) setVideotronChatBgMode(val.videotronChatBgMode);
+        if (val.videotronChatBgColor !== undefined) setVideotronChatBgColor(val.videotronChatBgColor);
+        if (val.videotronChatBgOpacity !== undefined) setVideotronChatBgOpacity(val.videotronChatBgOpacity);
+        if (val.videotronChatBgBlur !== undefined) setVideotronChatBgBlur(val.videotronChatBgBlur);
+        if (val.videotronChatBorderColor !== undefined) setVideotronChatBorderColor(val.videotronChatBorderColor);
+        if (val.videotronChatBorderOpacity !== undefined) setVideotronChatBorderOpacity(val.videotronChatBorderOpacity);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isAdminLoggedIn]);
+
+  // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
+  useEffect(() => {
+    if (!isAdminLoggedIn) return;
+
+    const currentConfig = {
+      videotronTheme,
+      videotronScale,
+      videotronBg,
+      eventTitle,
+      eventTitleSize,
+      videotronLogoLeft,
+      videotronLogoRight,
+      videotronLogoSize,
+      videotronQrCodeUrl,
+      videotronSupportedByText,
+      videotronQrSize,
+      videotronQrXOffset,
+      videotronQrYOffset,
+      videotronBgSize,
+      videotronBlur,
+      videotronLogoBgEnabled,
+      videotronLogoInnerScale,
+      videotronQrBgEnabled,
+      videotronSponsorBgEnabled,
+      eventTitleColor,
+      videotronSponsorTextColor,
+      videotronSponsorTextSize,
+      videotronQrTextColor,
+      videotronQrTextSize,
+      videotronChatBgMode,
+      videotronChatBgColor,
+      videotronChatBgOpacity,
+      videotronChatBgBlur,
+      videotronChatBorderColor,
+      videotronChatBorderOpacity,
+    };
+
+    const dbConfig = lastVideotronConfigRef.current;
+    if (dbConfig) {
+      const isDifferent = Object.keys(currentConfig).some(
+        (key) => currentConfig[key as keyof typeof currentConfig] !== dbConfig[key]
+      );
+      if (!isDifferent) {
+        return;
+      }
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        lastVideotronConfigRef.current = currentConfig;
+        await set(ref(db, 'videotron_config'), currentConfig);
+      } catch (error) {
+        console.error('Error saving videotron config:', error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    isAdminLoggedIn,
+    videotronTheme,
+    videotronScale,
+    videotronBg,
+    eventTitle,
+    eventTitleSize,
+    videotronLogoLeft,
+    videotronLogoRight,
+    videotronLogoSize,
+    videotronQrCodeUrl,
+    videotronSupportedByText,
+    videotronQrSize,
+    videotronQrXOffset,
+    videotronQrYOffset,
+    videotronBgSize,
+    videotronBlur,
+    videotronLogoBgEnabled,
+    videotronLogoInnerScale,
+    videotronQrBgEnabled,
+    videotronSponsorBgEnabled,
+    eventTitleColor,
+    videotronSponsorTextColor,
+    videotronSponsorTextSize,
+    videotronQrTextColor,
+    videotronQrTextSize,
+    videotronChatBgMode,
+    videotronChatBgColor,
+    videotronChatBgOpacity,
+    videotronChatBgBlur,
+    videotronChatBorderColor,
+    videotronChatBorderOpacity,
+  ]);
 
   // Toggle filter handler
   const toggleFilter = async () => {
@@ -1797,182 +1968,912 @@ export default function AdminPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-[100] flex flex-col font-sans overflow-hidden min-h-screen transition-colors duration-300 ${
-              videotronTheme === 'light' ? 'bg-slate-50' : 'bg-slate-950'
-            }`}
+            className="fixed inset-0 z-[100] flex font-sans overflow-hidden min-h-screen bg-slate-950 text-white transition-all duration-300"
           >
-            {/* Cyber Grid Background */}
-            <div className={`absolute inset-0 bg-[size:4rem_4rem] pointer-events-none transition-all duration-300 ${
-              videotronTheme === 'light'
-                ? 'bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#fff_70%,transparent_100%)] opacity-70'
-                : 'bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40'
-            }`} />
-
-            <header className={`px-6 py-4 border-b flex items-center justify-between relative z-10 shadow-lg transition-all duration-300 ${
-              videotronTheme === 'light' 
-                ? 'border-slate-200 bg-white/95 shadow-slate-200/20' 
-                : 'border-slate-800 bg-slate-900/95 shadow-slate-950/20'
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-inner transition-colors duration-300 ${
-                  videotronTheme === 'light'
-                    ? 'bg-indigo-100 border border-indigo-200 text-indigo-600'
-                    : 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300'
-                }`}>
-                  {chatIcon ? (
-                    <img src={chatIcon} alt="Icon" className="w-full h-full object-cover" />
-                  ) : (
-                    <MessageSquare size={24} className="stroke-[2]" />
-                  )}
-                </div>
-                <div>
-                  <h2 className={`text-xl md:text-2xl font-black tracking-wide flex items-center gap-2 transition-colors duration-300 ${
-                    videotronTheme === 'light' ? 'text-slate-900' : 'text-white'
-                  }`}>
-                    {chatTitle}
-                    <span className="px-2.5 py-0.5 bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 text-[10px] md:text-xs font-black rounded-full uppercase tracking-widest animate-pulse">
-                      LIVE
-                    </span>
-                  </h2>
-                  <div className="flex items-center gap-2 text-sm mt-0.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                    <span className={`font-semibold transition-colors duration-300 ${
-                      videotronTheme === 'light' ? 'text-slate-600' : 'text-slate-400'
-                    }`}>
-                      {userStats.total > 0 ? (userStats.users + userStats.admins) : 0} Anggota Aktif Obrolan
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                {/* Scale controls */}
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${
-                  videotronTheme === 'light'
-                    ? 'bg-slate-100 border-slate-200 text-slate-700'
-                    : 'bg-slate-800 border-slate-700/50 text-slate-200'
-                }`}>
-                  <button onClick={() => setVideotronScale(prev => Math.max(50, prev - 10))} className="hover:text-indigo-500 transition-colors cursor-pointer p-0.5"><Minus size={16} /></button>
-                  <span className="text-sm font-semibold min-w-[4ch] text-center">{videotronScale}%</span>
-                  <button onClick={() => setVideotronScale(prev => Math.min(200, prev + 10))} className="hover:text-indigo-500 transition-colors cursor-pointer p-0.5"><Plus size={16} /></button>
-                </div>
-
-                {/* Theme Toggle Button */}
-                <button
-                  onClick={() => setVideotronTheme(prev => prev === 'light' ? 'dark' : 'light')}
-                  className={`p-2.5 rounded-xl flex items-center justify-center transition-all border shadow-sm cursor-pointer ${
-                    videotronTheme === 'light'
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700/50'
-                  }`}
-                  title={videotronTheme === 'light' ? "Ubah ke Mode Gelap" : "Ubah ke Mode Terang"}
+            {/* REAL-TIME CONTROLLER SIDEBAR PANEL */}
+            <AnimatePresence>
+              {showVideotronSidebar && (
+                <motion.div
+                  initial={{ opacity: 0, x: -100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  className="w-80 md:w-96 shrink-0 h-screen bg-slate-900/95 border-r border-white/10 backdrop-blur-xl p-5 overflow-y-auto flex flex-col justify-between z-[110] shadow-2xl relative"
                 >
-                  {videotronTheme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                </button>
-
-                {/* Minimalist Icon-only Keluar Preview Button */}
-                <button 
-                  onClick={() => setShowVideotronPreview(false)}
-                  className={`p-2.5 rounded-xl flex items-center justify-center transition-all border shadow-sm cursor-pointer ${
-                    videotronTheme === 'light'
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700/50'
-                  }`}
-                  title="Keluar Preview"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-              </div>
-            </header>
-
-            <div className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 relative z-10 mx-auto w-full scrollbar-thin transition-colors duration-300 ${
-              videotronTheme === 'light' ? 'scrollbar-thumb-slate-200' : 'scrollbar-thumb-slate-800'
-            }`}>
-              <div 
-                className="max-w-5xl mx-auto w-full space-y-6 transition-transform duration-300"
-                style={{ zoom: videotronScale / 100 }}
-              >
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
-                    <MessageSquare size={48} className={`${videotronTheme === 'light' ? 'text-slate-300' : 'text-slate-600'} stroke-[1.5] animate-bounce`} />
-                    <p className={`text-lg font-bold ${videotronTheme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Belum Ada Pesan</p>
-                    <p className={`text-sm ${videotronTheme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>Pesan dari warga Surabaya yang terkirim akan muncul di sini secara real-time.</p>
-                  </div>
-                ) : (
-                  messages.map((msg, idx) => {
-                    const isAdminMsg = msg.senderType === 'admin';
-                    const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
-                    const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
-                    const AvatarIcon = fallbackAvatarDef.icon;
-
-                    // Get our dynamic premium colorful theme for this bubble
-                    const isLight = videotronTheme === 'light';
-                    const t = getThemeForMsg(msg, isLight);
-
-                    return (
-                      <div 
-                        key={msg.id || idx} 
-                        className={`flex gap-4 md:gap-5 items-start backdrop-blur-md p-5 md:p-6 rounded-2xl shadow-xl transition-all duration-300 relative overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 border ${t.bg}`}
-                        style={{ borderLeft: `6px solid ${t.borderLeft}` }}
+                  {/* Scrollable controls */}
+                  <div className="space-y-6 pb-12">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <h3 className="font-black text-sm tracking-widest uppercase text-slate-100 flex items-center gap-2">
+                        <span>⚙️ SETUP VIDEOTRON</span>
+                      </h3>
+                      <button
+                        onClick={() => setShowVideotronSidebar(false)}
+                        className="text-white/60 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"
+                        title="Sembunyikan Menu"
                       >
-                        {/* Glow Overlay Effect on Hover */}
-                        <div 
-                          className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity pointer-events-none duration-300"
-                          style={{ backgroundColor: t.borderLeft }}
+                        <EyeOff size={18} />
+                      </button>
+                    </div>
+
+                    {/* Event Title Section */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Header Event</span>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Nama Judul Event</label>
+                        <textarea
+                          value={eventTitle}
+                          onChange={(e) => setEventTitle(e.target.value)}
+                          placeholder="Ketik nama event..."
+                          rows={2}
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs font-bold text-white transition-colors"
                         />
-
-                        {/* Large User Avatar Container */}
-                        <div className="shrink-0">
-                          {isAdminMsg ? (
-                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center text-white shadow-xl border-3 border-amber-400 shrink-0">
-                              <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" />
-                            </div>
-                          ) : selectedCustomAvatar ? (
-                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-3 bg-slate-950 overflow-hidden shadow-xl shrink-0 transition-colors duration-300"
-                                 style={{ borderColor: t.borderLeft }}>
-                              <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-                            </div>
-                          ) : (
-                            <div 
-                              className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white shadow-xl border-3 shrink-0 transition-colors duration-300"
-                              style={{ backgroundColor: t.borderLeft, borderColor: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}
-                            >
-                              <AvatarIcon className="w-10 h-10 md:w-12 md:h-12 stroke-[2]" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Message Content Container */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3.5 flex-wrap">
-                            <span className={`text-xl md:text-2xl lg:text-3xl font-black tracking-wide transition-colors duration-300 ${t.userText}`}>
-                              {msg.username}
-                            </span>
-                            {isAdminMsg ? (
-                              <span className={`px-3.5 py-1 text-xs md:text-sm font-black rounded-full uppercase tracking-widest border ${t.badge}`}>
-                                Moderator
-                              </span>
-                            ) : (
-                              <span className={`px-3.5 py-1 text-[10px] md:text-xs font-bold rounded-full uppercase tracking-wider border transition-colors duration-300 ${t.badge}`}>
-                                Warga Surabaya
-                              </span>
-                            )}
-                            <span className={`text-sm md:text-base ml-auto font-mono font-medium transition-colors duration-300 ${t.timeText}`}>
-                              {formatTime(msg.timestamp)}
-                            </span>
-                          </div>
-                          
-                          <p className={`mt-3 text-lg md:text-xl lg:text-2xl leading-relaxed break-words whitespace-pre-wrap transition-colors duration-300 ${t.msgText}`}>
-                            {msg.message}
-                          </p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Ukuran Font Judul ({eventTitleSize}px)</label>
+                        <input
+                          type="range"
+                          min="20"
+                          max="100"
+                          value={eventTitleSize}
+                          onChange={(e) => setEventTitleSize(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Warna Font Judul</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={eventTitleColor}
+                            onChange={(e) => setEventTitleColor(e.target.value)}
+                            className="w-8 h-8 rounded-lg bg-transparent border border-white/20 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={eventTitleColor}
+                            onChange={(e) => setEventTitleColor(e.target.value)}
+                            className="flex-1 px-2 py-1 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-lg text-xs font-mono text-white"
+                          />
                         </div>
                       </div>
-                    );
-                  })
-                )}
-                <div ref={videotronEndRef} />
+                    </div>
+
+                    {/* Left & Right Logos Section */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Logo Header</span>
+                      
+                      {/* Left Logo */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Logo Kiri (Upload / URL)</label>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="videotron-logo-left-file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setVideotronLogoLeft(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="videotron-logo-left-file"
+                            className="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Upload size={12} />
+                            <span>Upload</span>
+                          </label>
+                          {videotronLogoLeft && (
+                            <button
+                              onClick={() => setVideotronLogoLeft('')}
+                              className="px-2 py-1.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold transition-colors"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={videotronLogoLeft}
+                          onChange={(e) => setVideotronLogoLeft(e.target.value)}
+                          placeholder="Atau tempel URL logo..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+
+                      {/* Right Logo */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Logo Kanan (Upload / URL)</label>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="videotron-logo-right-file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setVideotronLogoRight(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="videotron-logo-right-file"
+                            className="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Upload size={12} />
+                            <span>Upload</span>
+                          </label>
+                          {videotronLogoRight && (
+                            <button
+                              onClick={() => setVideotronLogoRight('')}
+                              className="px-2 py-1.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold transition-colors"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={videotronLogoRight}
+                          onChange={(e) => setVideotronLogoRight(e.target.value)}
+                          placeholder="Atau tempel URL logo..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+
+                      {/* Logo Size */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Ukuran Logo ({videotronLogoSize}px)</label>
+                        <input
+                          type="range"
+                          min="40"
+                          max="160"
+                          value={videotronLogoSize}
+                          onChange={(e) => setVideotronLogoSize(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Logo Container Background Toggle */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-white/70 font-bold">Background Container Logo</span>
+                        <button
+                          onClick={() => setVideotronLogoBgEnabled(prev => !prev)}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all border ${
+                            videotronLogoBgEnabled 
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' 
+                              : 'bg-slate-950 border-white/10 text-white/40'
+                          }`}
+                        >
+                          {videotronLogoBgEnabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+
+                      {/* Logo Inside Container Scale */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Skala Logo di Dalam Container ({videotronLogoInnerScale}%)</label>
+                        <input
+                          type="range"
+                          min="20"
+                          max="150"
+                          value={videotronLogoInnerScale}
+                          onChange={(e) => setVideotronLogoInnerScale(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* QR Code Section */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">QR Code</span>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Upload QR Code (Upload / URL)</label>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="videotron-qr-file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setVideotronQrCodeUrl(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="videotron-qr-file"
+                            className="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Upload size={12} />
+                            <span>Upload QR</span>
+                          </label>
+                          {videotronQrCodeUrl && (
+                            <button
+                              onClick={() => setVideotronQrCodeUrl('')}
+                              className="px-2 py-1.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold transition-colors"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={videotronQrCodeUrl}
+                          onChange={(e) => setVideotronQrCodeUrl(e.target.value)}
+                          placeholder="Atau tempel URL QR Code..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Ukuran QR Code ({videotronQrSize}px)</label>
+                        <input
+                          type="range"
+                          min="60"
+                          max="250"
+                          value={videotronQrSize}
+                          onChange={(e) => setVideotronQrSize(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+
+                      {/* SCAN QR Text Settings */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Size Teks SCAN QR ({videotronQrTextSize}px)</label>
+                          <input
+                            type="range"
+                            min="6"
+                            max="24"
+                            value={videotronQrTextSize}
+                            onChange={(e) => setVideotronQrTextSize(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Color Teks SCAN QR</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={videotronQrTextColor}
+                              onChange={(e) => setVideotronQrTextColor(e.target.value)}
+                              className="w-6 h-6 rounded bg-transparent border border-white/20 cursor-pointer shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={videotronQrTextColor}
+                              onChange={(e) => setVideotronQrTextColor(e.target.value)}
+                              className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* QR Code Container Background Toggle */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-white/70 font-bold">Background Container QR</span>
+                        <button
+                          onClick={() => setVideotronQrBgEnabled(prev => !prev)}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all border ${
+                            videotronQrBgEnabled 
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' 
+                              : 'bg-slate-950 border-white/10 text-white/40'
+                          }`}
+                        >
+                          {videotronQrBgEnabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Posisi X Offset ({videotronQrXOffset}px)</label>
+                          <input
+                            type="range"
+                            min="-150"
+                            max="150"
+                            value={videotronQrXOffset}
+                            onChange={(e) => setVideotronQrXOffset(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Posisi Y Offset ({videotronQrYOffset}px)</label>
+                          <input
+                            type="range"
+                            min="-150"
+                            max="150"
+                            value={videotronQrYOffset}
+                            onChange={(e) => setVideotronQrYOffset(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Custom Supported By text */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Supported By</span>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Teks Supported By</label>
+                        <input
+                          type="text"
+                          value={videotronSupportedByText}
+                          onChange={(e) => setVideotronSupportedByText(e.target.value)}
+                          placeholder="SUPPORTED BY"
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+
+                      {/* Supported By Text Settings */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Ukuran Font ({videotronSponsorTextSize}px)</label>
+                          <input
+                            type="range"
+                            min="8"
+                            max="36"
+                            value={videotronSponsorTextSize}
+                            onChange={(e) => setVideotronSponsorTextSize(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Warna Font</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={videotronSponsorTextColor}
+                              onChange={(e) => setVideotronSponsorTextColor(e.target.value)}
+                              className="w-6 h-6 rounded bg-transparent border border-white/20 cursor-pointer shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={videotronSponsorTextColor}
+                              onChange={(e) => setVideotronSponsorTextColor(e.target.value)}
+                              className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sponsor Container Background Toggle */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-white/70 font-bold">Background Container Sponsor</span>
+                        <button
+                          onClick={() => setVideotronSponsorBgEnabled(prev => !prev)}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all border ${
+                            videotronSponsorBgEnabled 
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' 
+                              : 'bg-slate-950 border-white/10 text-white/40'
+                          }`}
+                        >
+                          {videotronSponsorBgEnabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Custom Background Section */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Background</span>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Ganti Background (Upload / URL)</label>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="videotron-bg-file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setVideotronBg(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="videotron-bg-file"
+                            className="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Upload size={12} />
+                            <span>Upload Bg</span>
+                          </label>
+                        </div>
+                        <input
+                          type="text"
+                          value={videotronBg}
+                          onChange={(e) => setVideotronBg(e.target.value)}
+                          placeholder="Ketik URL background..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Background Size</label>
+                        <div className="flex gap-2">
+                          {['cover', 'contain', 'auto'].map((size) => (
+                            <button
+                              key={size}
+                              onClick={() => setVideotronBgSize(size)}
+                              className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                                videotronBgSize === size
+                                  ? 'bg-indigo-600 border-indigo-500 text-white'
+                                  : 'bg-slate-950 border-white/10 text-white/60 hover:text-white'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Background Blur Intensity */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Intensitas Background Blur ({videotronBlur}px)</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="40"
+                          value={videotronBlur}
+                          onChange={(e) => setVideotronBlur(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* General Scale and Bubble Theme Options */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Pengaturan Tampilan</span>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Skala Zoom Videotron ({videotronScale}%)</label>
+                        <input
+                          type="range"
+                          min="50"
+                          max="200"
+                          step="5"
+                          value={videotronScale}
+                          onChange={(e) => setVideotronScale(Number(e.target.value))}
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Tema Bubble Pesan</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setVideotronTheme('dark')}
+                            className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-all ${
+                              videotronTheme === 'dark'
+                                ? 'bg-indigo-600 border-indigo-500 text-white'
+                                : 'bg-slate-950 border-white/10 text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Mode Gelap
+                          </button>
+                          <button
+                            onClick={() => setVideotronTheme('light')}
+                            className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-all ${
+                              videotronTheme === 'light'
+                                ? 'bg-indigo-600 border-indigo-500 text-white'
+                                : 'bg-slate-950 border-white/10 text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Mode Terang
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Real-time Chat Container Styling Section */}
+                    <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Desain Wadah Chat (Container)</span>
+                      
+                      {/* BG Mode */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Mode Latar Belakang</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setVideotronChatBgMode('blur')}
+                            className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                              videotronChatBgMode === 'blur'
+                                ? 'bg-indigo-600 border-indigo-500 text-white'
+                                : 'bg-slate-950 border-white/10 text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Blur (Kaca)
+                          </button>
+                          <button
+                            onClick={() => setVideotronChatBgMode('solid')}
+                            className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                              videotronChatBgMode === 'solid'
+                                ? 'bg-indigo-600 border-indigo-500 text-white'
+                                : 'bg-slate-950 border-white/10 text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Solid (Pekat)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* BG Color & Opacity */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Warna Wadah</label>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="color"
+                              value={videotronChatBgColor}
+                              onChange={(e) => setVideotronChatBgColor(e.target.value)}
+                              className="w-6 h-6 rounded bg-transparent border border-white/20 cursor-pointer shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={videotronChatBgColor}
+                              onChange={(e) => setVideotronChatBgColor(e.target.value)}
+                              className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Opasitas Wadah ({videotronChatBgOpacity}%)</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={videotronChatBgOpacity}
+                            onChange={(e) => setVideotronChatBgOpacity(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Blur Intensity */}
+                      {videotronChatBgMode === 'blur' && (
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Intensitas Blur Wadah ({videotronChatBgBlur}px)</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="60"
+                            value={videotronChatBgBlur}
+                            onChange={(e) => setVideotronChatBgBlur(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      )}
+
+                      {/* Border Color & Opacity */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Warna Stroke/Border</label>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="color"
+                              value={videotronChatBorderColor}
+                              onChange={(e) => setVideotronChatBorderColor(e.target.value)}
+                              className="w-6 h-6 rounded bg-transparent border border-white/20 cursor-pointer shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={videotronChatBorderColor}
+                              onChange={(e) => setVideotronChatBorderColor(e.target.value)}
+                              className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Opasitas Stroke ({videotronChatBorderOpacity}%)</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={videotronChatBorderOpacity}
+                            onChange={(e) => setVideotronChatBorderOpacity(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sidebar bottom action */}
+                  <div className="border-t border-white/10 pt-4 mt-auto">
+                    <button
+                      onClick={() => {
+                        setShowVideotronPreview(false);
+                      }}
+                      className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/10 cursor-pointer transition-colors"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Keluar Preview</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Ambient viewport that scales and contains the videotron screen layout */}
+            <div 
+              className="flex-1 flex flex-col justify-between p-6 md:p-8 lg:p-10 relative overflow-y-auto scrollbar-none transition-all duration-300"
+              style={{
+                backgroundImage: `url(${videotronBg})`,
+                backgroundSize: videotronBgSize,
+                backgroundPosition: 'center',
+              }}
+            >
+              {/* Ambient Dark Overlay for elegant contrast & readability */}
+              <div className="absolute inset-0 bg-slate-950/70 pointer-events-none" style={{ backdropFilter: `blur(${videotronBlur}px)` }} />
+
+              {/* Real-time scalable view area */}
+              <div 
+                className="flex-1 flex flex-col justify-between relative z-10 w-full max-w-7xl mx-auto h-full"
+                style={{ zoom: videotronScale / 100 }}
+              >
+                {/* HEADER LAYOUT: LOGO - EVENT TITLE - LOGO */}
+                <div className="flex items-center justify-between gap-6 mb-6 w-full">
+                  {/* Left LOGO card */}
+                  <div 
+                    className={videotronLogoBgEnabled ? "bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center p-2 overflow-hidden shrink-0 shadow-lg" : "flex items-center justify-center overflow-hidden shrink-0"}
+                    style={{ width: `${videotronLogoSize}px`, height: `${videotronLogoSize}px` }}
+                  >
+                    {videotronLogoLeft ? (
+                      <img src={videotronLogoLeft} alt="Logo Kiri" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                    ) : chatIcon ? (
+                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                    ) : (
+                      <span className="text-xs font-black text-white/70 tracking-widest">LOGO</span>
+                    )}
+                  </div>
+
+                  {/* Center "NAMA EVENT" display */}
+                  <div className="flex-1 text-center px-4">
+                    <h1 
+                      className="font-black tracking-widest drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] font-sans uppercase"
+                      style={{ fontSize: `${eventTitleSize}px`, lineHeight: 1.1, color: eventTitleColor }}
+                    >
+                      {eventTitle}
+                    </h1>
+                  </div>
+
+                  {/* Right LOGO card (for perfect symmetry) */}
+                  <div 
+                    className={videotronLogoBgEnabled ? "bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center p-2 overflow-hidden shrink-0 shadow-lg" : "flex items-center justify-center overflow-hidden shrink-0"}
+                    style={{ width: `${videotronLogoSize}px`, height: `${videotronLogoSize}px` }}
+                  >
+                    {videotronLogoRight ? (
+                      <img src={videotronLogoRight} alt="Logo Kanan" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                    ) : chatIcon ? (
+                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                    ) : (
+                      <span className="text-xs font-black text-white/70 tracking-widest">LOGO</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* ELEGANT GLASS CONTAINER WITH MESSAGE LIST */}
+                <div 
+                  className="flex-1 rounded-[32px] md:rounded-[40px] relative overflow-hidden flex flex-col w-full p-6 md:p-8 min-h-[350px] mb-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)] border"
+                  style={{
+                    borderColor: `color-mix(in srgb, ${videotronChatBorderColor} ${videotronChatBorderOpacity}%, transparent)`,
+                  }}
+                >
+                  {/* Custom Background element with custom opacity & blur */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundColor: videotronChatBgColor,
+                      opacity: videotronChatBgOpacity / 100,
+                      backdropFilter: videotronChatBgMode === 'blur' ? `blur(${videotronChatBgBlur}px)` : 'none',
+                      WebkitBackdropFilter: videotronChatBgMode === 'blur' ? `blur(${videotronChatBgBlur}px)` : 'none',
+                    }}
+                  />
+                  {/* Scrolling message list */}
+                  <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pb-4">
+                    {messages.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
+                        <MessageSquare size={48} className="text-white/20 stroke-[1.5] animate-bounce" />
+                        <p className="text-lg font-bold text-white/60">Belum Ada Pesan</p>
+                        <p className="text-sm text-white/40">Pesan dari warga Surabaya yang terkirim akan muncul di sini secara real-time.</p>
+                      </div>
+                    ) : (
+                      messages.map((msg, idx) => {
+                        const isAdminMsg = msg.senderType === 'admin';
+                        const selectedCustomAvatar = userAvatars.find(a => a.id === msg.avatar);
+                        const fallbackAvatarDef = AVATARS.find(a => a.id === msg.avatar) || AVATARS[0];
+                        const AvatarIcon = fallbackAvatarDef.icon;
+
+                        const isDarkTheme = videotronTheme === 'dark';
+
+                        return (
+                          <div 
+                            key={msg.id || idx} 
+                            className={`flex gap-4 md:gap-5 items-start group animate-in fade-in slide-in-from-bottom-4 duration-300 p-4 rounded-3xl border transition-all ${
+                              isDarkTheme 
+                                ? 'bg-slate-950/50 backdrop-blur-md border-white/10 text-white' 
+                                : 'bg-white/85 backdrop-blur-md border-white/50 text-slate-900'
+                            }`}
+                          >
+                            {/* Round Avatar Left with Grey/Slate Circle Background */}
+                            <div className="shrink-0">
+                              {isAdminMsg ? (
+                                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-white shadow-md border border-white/20 shrink-0">
+                                  <ShieldCheck className="w-6 h-6 md:w-8 md:h-8 stroke-[2]" />
+                                </div>
+                              ) : selectedCustomAvatar ? (
+                                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-white/20 bg-slate-900/20 overflow-hidden shadow-md shrink-0">
+                                  <img src={selectedCustomAvatar.url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center text-slate-300 bg-slate-800/40 border border-white/10 shadow-md shrink-0">
+                                  <AvatarIcon className="w-6 h-6 md:w-8 md:h-8 stroke-[2]" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Content */}
+                            <div className="flex-1 min-w-0 flex flex-col gap-1.5 text-left">
+                              {/* USERNAME & TYPE capsule */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className={`px-3 py-1 rounded-full text-white font-black text-xs uppercase tracking-wider shadow-sm ${
+                                  isAdminMsg ? 'bg-amber-500' : (msg.color || 'bg-indigo-600')
+                                }`}>
+                                  {msg.username}
+                                </div>
+                                <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full border ${
+                                  isDarkTheme 
+                                    ? 'border-white/10 text-white/50 bg-white/5' 
+                                    : 'border-slate-200 text-slate-500 bg-slate-50'
+                                }`}>
+                                  {isAdminMsg ? 'Moderator' : 'Warga Surabaya'}
+                                </span>
+                                <span className={`text-[10px] font-mono font-medium ml-auto ${
+                                  isDarkTheme ? 'text-white/30' : 'text-slate-400'
+                                }`}>
+                                  {formatTime(msg.timestamp)}
+                                </span>
+                              </div>
+                              
+                              {/* Message text bubble (integrated cleanly for elegance) */}
+                              <p className={`text-base md:text-lg font-medium leading-relaxed break-words whitespace-pre-wrap ${
+                                isDarkTheme ? 'text-white/90' : 'text-slate-800'
+                              }`}>
+                                {msg.message}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={videotronEndRef} />
+                  </div>
+                </div>
+
+                {/* FOOTER ROW: SPONSORS (LEFT) & QR CODE (RIGHT) PLACED HORIZONTALLY */}
+                <div className="w-full flex flex-col md:flex-row items-stretch gap-4">
+                  {/* Sponsor Box */}
+                  <div className={`flex-1 flex flex-col items-start gap-1.5 p-4 rounded-[24px] transition-all duration-300 ${
+                    videotronSponsorBgEnabled 
+                      ? 'bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg' 
+                      : ''
+                  }`}>
+                    {/* Positioned on the top-left of the sponsor container */}
+                    <div 
+                      className="font-black tracking-widest uppercase transition-all duration-300"
+                      style={{ 
+                        color: videotronSponsorTextColor, 
+                        fontSize: `${videotronSponsorTextSize}px` 
+                      }}
+                    >
+                      {videotronSupportedByText}
+                    </div>
+                    
+                    {/* Horizontal logo/partner banner spans full-width for max clarity */}
+                    <div className={`w-full rounded-[16px] px-4 py-2.5 flex flex-wrap items-center justify-around gap-4 md:gap-6 overflow-hidden transition-all duration-300 ${
+                      videotronSponsorBgEnabled ? 'bg-white/10 backdrop-blur-md border border-white/5' : 'bg-white/5 backdrop-blur-sm border border-white/5'
+                    }`}>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-orange-500 inline-block" /> DAYAPROMO
+                      </span>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-blue-500 inline-block" /> KADIN JATIM
+                      </span>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" /> ASPERAPI
+                      </span>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-rose-500 inline-block" /> BANGGA SURABAYA
+                      </span>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-indigo-500 inline-block" /> SAPAWARGA
+                      </span>
+                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-yellow-500 inline-block" /> SURABAYA HEBAT
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* QR Code Container beside sponsor container */}
+                  <div 
+                    className={`flex flex-col items-center justify-center shrink-0 relative transition-all duration-200 ${
+                      videotronQrBgEnabled 
+                        ? 'bg-white/10 backdrop-blur-xl border border-white/20 p-3 rounded-[24px] shadow-lg' 
+                        : 'p-1'
+                    }`}
+                    style={{
+                      width: `${videotronQrSize}px`,
+                      height: `${videotronQrSize}px`,
+                      transform: `translate(${videotronQrXOffset}px, ${videotronQrYOffset}px)`,
+                    }}
+                  >
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      {videotronQrCodeUrl ? (
+                        <img src={videotronQrCodeUrl} alt="QR Code" className="w-full h-full object-contain rounded-lg" />
+                      ) : (
+                        <div className="w-full h-full bg-white p-1.5 rounded-lg flex items-center justify-center">
+                          <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900" fill="currentColor">
+                            <rect width="100" height="100" fill="#ffffff" />
+                            {/* Top Left corner finder */}
+                            <path d="M5,5 h30 v30 h-30 z M11,11 h18 v18 h-18 z" />
+                            {/* Top Right corner finder */}
+                            <path d="M65,5 h30 v30 h-30 z M71,11 h18 v18 h-18 z" />
+                            {/* Bottom Left corner finder */}
+                            <path d="M5,65 h30 v30 h-30 z M11,71 h18 v18 h-18 z" />
+                            {/* Dynamic center dots and small mock QR code noise */}
+                            <rect x="42" y="42" width="16" height="16" />
+                            <path d="M45,5 h5 v10 h-5 z M55,15 h10 v5 h-10 z" />
+                            <path d="M5,42 h10 v8 h-10 z M15,50 h12 v10 h-12 z" />
+                            <path d="M42,75 h15 v5 h-15 z M50,85 h15 v10 h-15 z" />
+                            <path d="M75,42 h20 v10 h-20 z M82,55 h10 v20 h-10 z" />
+                            <rect x="75" y="80" width="8" height="8" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    {videotronQrSize > 90 && (
+                      <span 
+                        className="font-black tracking-widest uppercase mt-1 text-center"
+                        style={{
+                          color: videotronQrTextColor,
+                          fontSize: `${videotronQrTextSize}px`
+                        }}
+                      >
+                        SCAN QR
+                      </span>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
+
+            {/* Toggle menu floating badge - Icon Only Settings, Pojok Kiri Bawah Kecil */}
+            <button
+              onClick={() => setShowVideotronSidebar(prev => !prev)}
+              className="fixed bottom-4 left-4 z-[120] w-9 h-9 flex items-center justify-center bg-slate-900/60 hover:bg-indigo-600 hover:text-white text-white/70 rounded-xl border border-white/10 backdrop-blur-md shadow-lg transition-all duration-200 cursor-pointer"
+              title={showVideotronSidebar ? "Sembunyikan Menu" : "Tampilkan Menu"}
+            >
+              <Settings size={18} className={`${showVideotronSidebar ? 'rotate-90' : ''} transition-transform duration-300`} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

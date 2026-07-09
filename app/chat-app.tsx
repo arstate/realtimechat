@@ -109,7 +109,14 @@ export default function HomePage() {
 
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
-  const isVideotronMode = false;
+  const [isVideotronMode, setIsVideotronMode] = useState<boolean>(false);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsVideotronMode(new URLSearchParams(window.location.search).get('videotron') === 'true');
+    }
+  }, []);
+
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
