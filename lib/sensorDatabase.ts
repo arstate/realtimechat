@@ -11,7 +11,7 @@
 // ==========================================
 export const DAFTAR_KATA_KASAR: string[] = [
   // --- KATA DASAR KASAR & DIALEK DAERAH ---
-  "ajig", "alay", "ampas", "anal", "ancok", "ancuk", "andipang", "anjing", "anjg", "anjim",
+  "ajig", "ajg", "asw", "bokep", "kentu", "kenthu", "kirek", "alay", "ampas", "anal", "ancok", "ancuk", "andipang", "anjing", "anjg", "anjim",
   "anjir", "anjrit", "anjrot", "anying", "apem", "asu", "asyu", "babangus", "babi", "bacol",
   "bacot", "bagong", "bahlul", "bajingan", "balegug", "banci", "bandot", "buaya", "bangkai",
   "bangke", "bangsat", "bastard", "bedebah", "bedegong", "bego", "bejad", "bejat", "belegug",
@@ -386,7 +386,7 @@ export const DAFTAR_OBFUSCATION: Record<string, string> = {
 // ==========================================
 export const KATA_DASAR_KATEGORI: Record<string, string> = {
   // --- MAKIAN ORGAN & SEXUAL ---
-  "kontol": "jancok", "memek": "jancok", "ngentot": "kerja_keras", "ewe": "kerja_keras",
+  "kontol": "jancok", "memek": "jancok", "bokep": "jancok", "ngentot": "kerja_keras", "kentu": "kerja_keras", "kenthu": "kerja_keras", "ewe": "kerja_keras",
   "jancok": "jancok", "dancok": "jancok", "jancuk": "jancok", "dancuk": "jancok",
   "cuk": "jancok", "cok": "jancok", "peli": "jancok", "pepek": "jancok", "tempek": "jancok",
   "tetek": "tetek", "toket": "tetek", "nenen": "tetek", "pentil": "tetek",
@@ -401,7 +401,7 @@ export const KATA_DASAR_KATEGORI: Record<string, string> = {
   // --- HEWAN & MAKIAN KOTOR ---
   "babi": "anjing", "monyet": "anjing", "kunyuk": "anjing", "celeng": "anjing",
   "bangke": "anjing", "bangkai": "anjing", "keparat": "anjing", "bedebah": "anjing",
-  "anjing": "anjing", "asu": "anjing", "bajingan": "anjing", "bangsat": "anjing",
+  "anjing": "anjing", "ajg": "anjing", "asw": "anjing", "kirek": "anjing", "asu": "anjing", "bajingan": "anjing", "bangsat": "anjing",
   "kampret": "anjing", "brengsek": "anjing", "berengsek": "anjing",
   "su apik": "anjing", "asoe": "anjing", "njing": "anjing",
 

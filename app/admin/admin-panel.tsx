@@ -41,7 +41,8 @@ import {
   Bot,
   User,
   Sun,
-  Moon
+  Moon,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -253,6 +254,7 @@ export default function AdminPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState<boolean>(false);
+  const [showUnbanAllConfirm, setShowUnbanAllConfirm] = useState<boolean>(false);
   const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState<string | null>(null);
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
   const [videotronTheme, setVideotronTheme] = useState<'dark' | 'light'>('dark');
@@ -270,6 +272,7 @@ export default function AdminPage() {
   const [showBanUserView, setShowBanUserView] = useState(false);
   const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string, duration: number } | null>(null);
   const [showUnbanConfirm, setShowUnbanConfirm] = useState<{ userId: string } | null>(null);
+  const [activeBanDropdown, setActiveBanDropdown] = useState<string | null>(null);
   
   const [isAssetDownloading, setIsAssetDownloading] = useState<boolean>(true);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
@@ -638,7 +641,6 @@ export default function AdminPage() {
   };
 
   const handleUnbanAll = async () => {
-    if (!window.confirm("Apakah anda yakin ingin meng-unban semua user?")) return;
     try {
       const updates: any = {};
       allUsers.forEach(user => {
@@ -650,6 +652,7 @@ export default function AdminPage() {
       if (Object.keys(updates).length > 0) {
         await update(ref(db, 'users'), updates);
       }
+      setShowUnbanAllConfirm(false);
     } catch (e) {
       console.error("Failed to unban all", e);
     }
@@ -1333,7 +1336,7 @@ export default function AdminPage() {
                     </button>
                     {showBanUserView && (
                       <button
-                        onClick={handleUnbanAll}
+                        onClick={() => setShowUnbanAllConfirm(true)}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-sm transition-colors"
                       >
                         Unbanned All
@@ -1353,7 +1356,7 @@ export default function AdminPage() {
                     />
                   </div>
                   
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="bg-white rounded-xl border border-gray-200">
                     <table className="w-full text-left text-sm text-gray-600">
                       <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-500">
                         <tr>
@@ -1396,13 +1399,24 @@ export default function AdminPage() {
                                   Unban
                                 </button>
                               ) : (
-                                <div className="flex flex-wrap gap-1">
-                                  <button onClick={() => handleBanUser(user.id, 10/60)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">10m</button>
-                                  <button onClick={() => handleBanUser(user.id, 1)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">1h</button>
-                                  <button onClick={() => handleBanUser(user.id, 2)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">2h</button>
-                                  <button onClick={() => handleBanUser(user.id, 6)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">6h</button>
-                                  <button onClick={() => handleBanUser(user.id, 24)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">1d</button>
-                                  <button onClick={() => handleBanUser(user.id, -1)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">Forev</button>
+                                <div className="relative inline-block">
+                                  <button 
+                                    onClick={() => setActiveBanDropdown(activeBanDropdown === user.id ? null : user.id)} 
+                                    className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 flex items-center gap-1"
+                                  >
+                                    Ban User
+                                    <ChevronDown size={14} className={`transition-transform ${activeBanDropdown === user.id ? 'rotate-180' : ''}`} />
+                                  </button>
+                                  {activeBanDropdown === user.id && (
+                                    <div className="absolute left-0 top-full mt-1 w-32 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50 flex flex-col py-1">
+                                      <button onClick={() => { handleBanUser(user.id, 10/60); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 font-medium">10 Menit</button>
+                                      <button onClick={() => { handleBanUser(user.id, 1); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 font-medium">1 Jam</button>
+                                      <button onClick={() => { handleBanUser(user.id, 2); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 font-medium">2 Jam</button>
+                                      <button onClick={() => { handleBanUser(user.id, 6); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 font-medium">6 Jam</button>
+                                      <button onClick={() => { handleBanUser(user.id, 24); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 font-medium">1 Hari</button>
+                                      <button onClick={() => { handleBanUser(user.id, -1); setActiveBanDropdown(null); }} className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 font-bold border-t border-gray-100">Permanen</button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </td>
@@ -1607,6 +1621,44 @@ export default function AdminPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm"
                 >
                   Hapus Permanen
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showUnbanAllConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
+                <User size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 text-emerald-600">Unban Semua User?</h3>
+                <p className="text-sm text-gray-500 mt-1">Tindakan ini akan mengembalikan akses obrolan untuk seluruh user yang sedang diblokir.</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={() => setShowUnbanAllConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleUnbanAll}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20 transition-colors text-sm cursor-pointer font-bold"
+                >
+                  Ya, Unban Semua
                 </button>
               </div>
             </motion.div>
