@@ -300,6 +300,8 @@ export default function AdminPage() {
   const [videotronQrInnerScale, setVideotronQrInnerScale] = useState<number>(100);
   const [videotronQrBgEnabled, setVideotronQrBgEnabled] = useState<boolean>(true);
   const [videotronSponsorBgEnabled, setVideotronSponsorBgEnabled] = useState<boolean>(true);
+  const [videotronSponsorLogo, setVideotronSponsorLogo] = useState<string>('');
+  const [hasLoadedInitialConfig, setHasLoadedInitialConfig] = useState<boolean>(false);
   const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
   const videotronEndRef = useRef<HTMLDivElement>(null);
   const lastVideotronConfigRef = useRef<any>(null);
@@ -677,6 +679,7 @@ export default function AdminPage() {
         if (val.videotronQrInnerScale !== undefined) setVideotronQrInnerScale(val.videotronQrInnerScale);
         if (val.videotronQrBgEnabled !== undefined) setVideotronQrBgEnabled(val.videotronQrBgEnabled);
         if (val.videotronSponsorBgEnabled !== undefined) setVideotronSponsorBgEnabled(val.videotronSponsorBgEnabled);
+        if (val.videotronSponsorLogo !== undefined) setVideotronSponsorLogo(val.videotronSponsorLogo);
         if (val.eventTitleColor !== undefined) setEventTitleColor(val.eventTitleColor);
         if (val.videotronSponsorTextColor !== undefined) setVideotronSponsorTextColor(val.videotronSponsorTextColor);
         if (val.videotronSponsorTextSize !== undefined) setVideotronSponsorTextSize(val.videotronSponsorTextSize);
@@ -692,6 +695,7 @@ export default function AdminPage() {
         if (val.videotronOverlayColor !== undefined) setVideotronOverlayColor(val.videotronOverlayColor);
         if (val.videotronOverlayOpacity !== undefined) setVideotronOverlayOpacity(val.videotronOverlayOpacity);
       }
+      setHasLoadedInitialConfig(true);
     });
 
     return () => unsubscribe();
@@ -699,7 +703,7 @@ export default function AdminPage() {
 
   // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
   useEffect(() => {
-    if (!isAdminLoggedIn) return;
+    if (!isAdminLoggedIn || !hasLoadedInitialConfig) return;
 
     const currentConfig = {
       videotronTheme,
@@ -724,6 +728,7 @@ export default function AdminPage() {
       videotronQrInnerScale,
       videotronQrBgEnabled,
       videotronSponsorBgEnabled,
+      videotronSponsorLogo,
       eventTitleColor,
       videotronSponsorTextColor,
       videotronSponsorTextSize,
@@ -762,6 +767,7 @@ export default function AdminPage() {
     return () => clearTimeout(timer);
   }, [
     isAdminLoggedIn,
+    hasLoadedInitialConfig,
     videotronTheme,
     videotronScale,
     videotronBg,
@@ -784,6 +790,7 @@ export default function AdminPage() {
     videotronQrInnerScale,
     videotronQrBgEnabled,
     videotronSponsorBgEnabled,
+    videotronSponsorLogo,
     eventTitleColor,
     videotronSponsorTextColor,
     videotronSponsorTextSize,
@@ -2342,36 +2349,11 @@ export default function AdminPage() {
                           {videotronQrBgEnabled ? 'ON' : 'OFF'}
                         </button>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] text-white/55 block mb-1">Posisi X Offset ({videotronQrXOffset}px)</label>
-                          <input
-                            type="range"
-                            min="-150"
-                            max="150"
-                            value={videotronQrXOffset}
-                            onChange={(e) => setVideotronQrXOffset(Number(e.target.value))}
-                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-white/55 block mb-1">Posisi Y Offset ({videotronQrYOffset}px)</label>
-                          <input
-                            type="range"
-                            min="-150"
-                            max="150"
-                            value={videotronQrYOffset}
-                            onChange={(e) => setVideotronQrYOffset(Number(e.target.value))}
-                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
-                          />
-                        </div>
-                      </div>
                     </div>
 
                     {/* Custom Supported By text */}
                     <div className="space-y-3 bg-white/5 p-3.5 rounded-2xl border border-white/5">
-                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Supported By</span>
+                      <span className="text-[10px] font-black tracking-wider text-indigo-400 block uppercase">Supported By / Sponsor</span>
                       <div>
                         <label className="text-[10px] text-white/55 block mb-1">Teks Supported By</label>
                         <input
@@ -2379,6 +2361,52 @@ export default function AdminPage() {
                           value={videotronSupportedByText}
                           onChange={(e) => setVideotronSupportedByText(e.target.value)}
                           placeholder="SUPPORTED BY"
+                          className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
+                        />
+                      </div>
+
+                      {/* Sponsor Logo Upload */}
+                      <div>
+                        <label className="text-[10px] text-white/55 block mb-1">Logo Sponsor / Supporter (Upload / URL)</label>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="videotron-sponsor-logo-file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setVideotronSponsorLogo(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="videotron-sponsor-logo-file"
+                            className="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Upload size={12} />
+                            <span>Upload Logo</span>
+                          </label>
+                          {videotronSponsorLogo && (
+                            <button
+                              onClick={() => setVideotronSponsorLogo('')}
+                              className="px-2 py-1.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold transition-colors"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={videotronSponsorLogo}
+                          onChange={(e) => setVideotronSponsorLogo(e.target.value)}
+                          placeholder="Atau tempel URL logo sponsor..."
                           className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
                         />
                       </div>
@@ -2804,7 +2832,7 @@ export default function AdminPage() {
 
                 {/* ELEGANT GLASS CONTAINER WITH MESSAGE LIST */}
                 <div 
-                  className="flex-1 rounded-[32px] md:rounded-[40px] relative overflow-hidden flex flex-col w-full p-6 md:p-8 min-h-[350px] mb-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)] border"
+                  className="flex-1 rounded-[32px] md:rounded-[40px] relative overflow-hidden flex flex-col w-full px-6 md:px-8 py-0 min-h-[350px] mb-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)] border"
                   style={{
                     borderColor: `color-mix(in srgb, ${videotronChatBorderColor} ${videotronChatBorderOpacity}%, transparent)`,
                   }}
@@ -2820,7 +2848,13 @@ export default function AdminPage() {
                     }}
                   />
                   {/* Scrolling message list */}
-                  <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pb-4">
+                  <div 
+                    className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pt-8 pb-8"
+                    style={{
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)',
+                    }}
+                  >
                     {messages.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center space-y-3 text-center py-20">
                         <MessageSquare size={48} className="text-white/20 stroke-[1.5] animate-bounce" />
@@ -2878,8 +2912,8 @@ export default function AdminPage() {
                                 }`}>
                                   {isAdminMsg ? 'Moderator' : 'Warga Surabaya'}
                                 </span>
-                                <span className={`text-[10px] font-mono font-medium ml-auto ${
-                                  isDarkTheme ? 'text-white/30' : 'text-slate-400'
+                                <span className={`text-xs md:text-sm font-mono font-bold ml-auto ${
+                                  isDarkTheme ? 'text-white' : 'text-black'
                                 }`}>
                                   {formatTime(msg.timestamp)}
                                 </span>
@@ -2920,27 +2954,18 @@ export default function AdminPage() {
                     </div>
                     
                     {/* Horizontal logo/partner banner spans full-width for max clarity */}
-                    <div className={`w-full rounded-[16px] px-4 py-2.5 flex flex-wrap items-center justify-around gap-4 md:gap-6 overflow-hidden transition-all duration-300 ${
+                    <div className={`w-full h-16 md:h-20 rounded-[16px] overflow-hidden flex items-center justify-center p-2 transition-all duration-300 ${
                       videotronSponsorBgEnabled ? 'bg-white/10 backdrop-blur-md border border-white/5' : 'bg-white/5 backdrop-blur-sm border border-white/5'
                     }`}>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-orange-500 inline-block" /> DAYAPROMO
-                      </span>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-blue-500 inline-block" /> KADIN JATIM
-                      </span>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" /> ASPERAPI
-                      </span>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-rose-500 inline-block" /> BANGGA SURABAYA
-                      </span>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-indigo-500 inline-block" /> SAPAWARGA
-                      </span>
-                      <span className="text-white text-[10px] md:text-xs font-black tracking-wider flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-yellow-500 inline-block" /> SURABAYA HEBAT
-                      </span>
+                      {videotronSponsorLogo ? (
+                        <img 
+                          src={videotronSponsorLogo} 
+                          alt="Sponsor Logo" 
+                          className="w-full h-full object-contain" 
+                        />
+                      ) : (
+                        <span className="text-white/40 text-xs font-bold uppercase tracking-wider">Belum ada logo sponsor</span>
+                      )}
                     </div>
                   </div>
 
@@ -2954,7 +2979,6 @@ export default function AdminPage() {
                     style={{
                       width: `${videotronQrSize}px`,
                       height: `${videotronQrSize}px`,
-                      transform: `translate(${videotronQrXOffset}px, ${videotronQrYOffset}px)`,
                     }}
                   >
                     <div className="w-full h-full flex flex-col items-center justify-center" style={{ transform: `scale(${videotronQrInnerScale / 100})`, transformOrigin: 'center' }}>
