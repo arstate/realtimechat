@@ -10,6 +10,7 @@ import {
   push, 
   remove,
   set,
+  update,
   get,
   serverTimestamp 
 } from 'firebase/database';
@@ -261,9 +262,14 @@ export default function AdminPage() {
   const [chatTitle, setChatTitle] = useState<string>('Surabaya Community Live Chat');
   const [chatIcon, setChatIcon] = useState<string>('');
     const [draftTitle, setDraftTitle] = useState<string>('Surabaya Community Live Chat');
-  const [adminView, setAdminView] = useState<'chat' | 'avatars'>('chat');
+  const [adminView, setAdminView] = useState<'chat' | 'avatars' | 'users'>('chat');
   const [userAvatars, setUserAvatars] = useState<{id: string, url: string}[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [showBanUserView, setShowBanUserView] = useState(false);
+  const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string, duration: number } | null>(null);
+  const [showUnbanConfirm, setShowUnbanConfirm] = useState<{ userId: string } | null>(null);
   
   const [isAssetDownloading, setIsAssetDownloading] = useState<boolean>(true);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
@@ -559,10 +565,20 @@ export default function AdminPage() {
       localStorage.setItem('surabaya_cached_chat_enabled', isEnabled.toString());
     });
 
+    const usersRef = ref(db, 'users');
+    const unsubscribeUsers = onValue(usersRef, (snapshot) => {
+      const usersData: any[] = [];
+      snapshot.forEach((child) => {
+        usersData.push({ id: child.key, ...child.val() });
+      });
+      setAllUsers(usersData);
+    });
+
     return () => {
       unsubscribeFilter();
       unsubscribeChatEnabled();
       unsubscribeConfig();
+      unsubscribeUsers();
     };
   }, [isAdminLoggedIn]);
 
@@ -594,6 +610,48 @@ export default function AdminPage() {
       await set(ref(db, 'chat_config/title'), draftTitle);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'chat_config/title');
+    }
+  };
+
+  // Ban Handlers
+  const handleBanUser = async (userId: string, duration: number) => {
+    try {
+      const banUntil = duration === -1 ? -1 : Date.now() + duration * 60 * 60 * 1000;
+      await update(ref(db, `users/${userId}`), {
+        isBanned: true,
+        banUntil: banUntil
+      });
+    } catch (error) {
+      console.error("Failed to ban user", error);
+    }
+  };
+
+  const handleUnbanUser = async (userId: string) => {
+    try {
+      await update(ref(db, `users/${userId}`), {
+        isBanned: false,
+        banUntil: null
+      });
+    } catch (error) {
+      console.error("Failed to unban user", error);
+    }
+  };
+
+  const handleUnbanAll = async () => {
+    if (!window.confirm("Apakah anda yakin ingin meng-unban semua user?")) return;
+    try {
+      const updates: any = {};
+      allUsers.forEach(user => {
+        if (user.isBanned) {
+          updates[`${user.id}/isBanned`] = false;
+          updates[`${user.id}/banUntil`] = null;
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        await update(ref(db, 'users'), updates);
+      }
+    } catch (e) {
+      console.error("Failed to unban all", e);
     }
   };
 
@@ -1062,6 +1120,17 @@ export default function AdminPage() {
                         Buka Live Chat
                       </button>
                       <button
+                        onClick={() => setAdminView('users')}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors ${
+                          adminView === 'users' 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <User size={16} />
+                        Kelola User
+                      </button>
+                      <button
                         onClick={() => setAdminView('avatars')}
                         className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors ${
                           adminView === 'avatars' 
@@ -1236,6 +1305,119 @@ export default function AdminPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              </section>
+            ) : adminView === 'users' ? (
+              <section className="flex-1 flex flex-col h-[calc(100vh-280px)] md:h-screen bg-gray-50/50 overflow-y-auto">
+                <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600">
+                      <User size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-gray-900 tracking-wide text-sm md:text-base">
+                        Kelola User {showBanUserView ? 'Banned' : 'Aktif'}
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {showBanUserView ? 'Mengelola user yang sedang diblokir.' : 'Mengelola user yang sudah mendaftar dan online.'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowBanUserView(!showBanUserView)}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm transition-colors"
+                    >
+                      {showBanUserView ? 'Lihat Semua User' : 'Lihat Banned User'}
+                    </button>
+                    {showBanUserView && (
+                      <button
+                        onClick={handleUnbanAll}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-sm transition-colors"
+                      >
+                        Unbanned All
+                      </button>
+                    )}
+                  </div>
+                </header>
+                
+                <div className="p-6">
+                  <div className="mb-4">
+                    <input 
+                      type="text" 
+                      placeholder="Cari user..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="w-full max-w-md px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <table className="w-full text-left text-sm text-gray-600">
+                      <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-500">
+                        <tr>
+                          <th className="px-4 py-3">User</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {allUsers
+                          .filter(u => showBanUserView ? u.isBanned : !u.isBanned)
+                          .filter(u => (u.username || '').toLowerCase().includes(userSearch.toLowerCase()))
+                          .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0))
+                          .map(user => (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <img src={userAvatars.find(a => a.id === user.avatar)?.url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} alt="Avatar" className="w-8 h-8 rounded-full bg-gray-100 object-cover" />
+                                <div>
+                                  <div className="font-semibold text-gray-900">{user.username}</div>
+                                  <div className="text-xs text-gray-400">{user.domicile || 'Surabaya'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {user.isBanned ? (
+                                <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-semibold border border-red-200">Banned</span>
+                              ) : user.isOnline ? (
+                                <span className="px-2 py-1 bg-emerald-100 text-emerald-600 rounded text-xs font-semibold border border-emerald-200">Online</span>
+                              ) : (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-semibold border border-gray-200">Offline</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {user.isBanned ? (
+                                <button
+                                  onClick={() => handleUnbanUser(user.id)}
+                                  className="text-emerald-600 hover:text-emerald-700 font-semibold text-xs border border-emerald-200 px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100"
+                                >
+                                  Unban
+                                </button>
+                              ) : (
+                                <div className="flex flex-wrap gap-1">
+                                  <button onClick={() => handleBanUser(user.id, 10/60)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">10m</button>
+                                  <button onClick={() => handleBanUser(user.id, 1)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">1h</button>
+                                  <button onClick={() => handleBanUser(user.id, 2)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">2h</button>
+                                  <button onClick={() => handleBanUser(user.id, 6)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">6h</button>
+                                  <button onClick={() => handleBanUser(user.id, 24)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">1d</button>
+                                  <button onClick={() => handleBanUser(user.id, -1)} className="text-red-600 hover:text-red-700 font-semibold text-xs border border-red-200 px-2 py-1 rounded bg-red-50 hover:bg-red-100">Forev</button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {allUsers.filter(u => showBanUserView ? u.isBanned : !u.isBanned).length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                              Tidak ada user ditemukan.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </section>
             ) : (

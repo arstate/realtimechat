@@ -9,7 +9,10 @@ import {
   onValue, 
   push, 
   serverTimestamp,
-  get
+  get,
+  set,
+  update,
+  onDisconnect
 } from 'firebase/database';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { filterChatMessage } from '@/lib/chatFilter';
@@ -85,6 +88,8 @@ export default function HomePage() {
 
 
   const [username, setUsername] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
+  const [banInfo, setBanInfo] = useState<{ isBanned: boolean; banUntil: number | null }>({ isBanned: false, banUntil: null });
   const [userAvatar, setUserAvatar] = useState<string>('smile');
   const [userColor, setUserColor] = useState<string>('');
   const [userDomicile, setUserDomicile] = useState<string>('Surabaya');
@@ -273,6 +278,13 @@ export default function HomePage() {
   
   // Hydrate username after mount
   useEffect(() => {
+    let savedId = localStorage.getItem('surabaya_chat_user_id');
+    if (!savedId) {
+      savedId = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      localStorage.setItem('surabaya_chat_user_id', savedId);
+    }
+    setUserId(savedId);
+
     const savedName = localStorage.getItem('surabaya_chat_username');
     const savedAvatar = localStorage.getItem('surabaya_chat_avatar') || 'smile';
     const savedColor = localStorage.getItem('surabaya_chat_color') || COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -287,6 +299,49 @@ export default function HomePage() {
       setSelectedColor(savedColor);
     }
   }, []);
+
+  // Listen to ban status
+  useEffect(() => {
+    if (!userId) return;
+    const banRef = ref(db, `users/${userId}`);
+    const unsubscribeBan = onValue(banRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.isBanned) {
+        setBanInfo({ isBanned: true, banUntil: data.banUntil });
+      } else {
+        setBanInfo({ isBanned: false, banUntil: null });
+      }
+    });
+
+    return () => unsubscribeBan();
+  }, [userId]);
+
+  // Update presence
+  useEffect(() => {
+    if (!isNameSet || !userId || !username) return;
+
+    const userRef = ref(db, `users/${userId}`);
+    const updatePresence = async () => {
+      try {
+        await update(userRef, {
+          id: userId,
+          username,
+          avatar: userAvatar,
+          color: userColor,
+          domicile: userDomicile,
+          isOnline: true,
+          lastActive: serverTimestamp()
+        });
+        await onDisconnect(userRef).update({
+          isOnline: false,
+          lastActive: serverTimestamp()
+        });
+      } catch (e) {
+        console.error("Failed to update presence:", e);
+      }
+    };
+    updatePresence();
+  }, [isNameSet, userId, username, userAvatar, userColor, userDomicile]);
 
 
 
@@ -483,6 +538,30 @@ export default function HomePage() {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const isCurrentlyBanned = banInfo.isBanned && (banInfo.banUntil === -1 || (banInfo.banUntil !== null && banInfo.banUntil > Date.now()));
+
+  if (isCurrentlyBanned) {
+    let banDurationText = "selamanya";
+    if (banInfo.banUntil !== -1 && banInfo.banUntil !== null) {
+      banDurationText = "sampai " + new Date(banInfo.banUntil).toLocaleString();
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans text-white p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-red-500/30 rounded-2xl p-8 text-center space-y-6">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
+            <span className="text-3xl text-red-500">⚠</span>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-red-400">Akses Diblokir</h1>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Web anda di ban oleh admin {banDurationText}. Anda tidak dapat mengakses ruang obrolan, mengirim pesan, atau melakukan aktivitas apa pun.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 md:p-6 overflow-hidden">
