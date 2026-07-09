@@ -112,6 +112,12 @@ export default function HomePage() {
   const [editingMessageContent, setEditingMessageContent] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
   const isVideotronMode = false;
@@ -1273,10 +1279,10 @@ export default function HomePage() {
                           </div>
                           
                           {/* Edit Button */}
-                          {isMe && msg.timestamp && (Date.now() - msg.timestamp) <= 30000 && !isVideotronMode && (
+                          {isMe && msg.timestamp && (currentTime - msg.timestamp) <= 30000 && !isVideotronMode && (
                             <button
                               onClick={() => startEditing(msg)}
-                              className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 bg-white text-gray-500 rounded-full shadow hover:text-indigo-600 hover:bg-gray-50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                              className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 bg-white text-gray-500 rounded-full shadow hover:text-indigo-600 hover:bg-gray-50 transition-all z-10"
                               title="Edit Pesan"
                             >
                               <Edit2 size={14} />
