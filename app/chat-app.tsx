@@ -42,7 +42,7 @@ import {
   ArrowLeft,
   Lock,
   Phone
-} from 'lucide-react';
+, Edit2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface Message {
@@ -51,6 +51,7 @@ interface Message {
   username: string;
   message: string;
   timestamp: any;
+  isEdited?: boolean;
   avatar?: string;
   color?: string;
   domicile?: string;
@@ -107,6 +108,8 @@ export default function HomePage() {
   const [selectedColor, setSelectedColor] = useState<string>('');
 
   const [messageInput, setMessageInput] = useState<string>('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingMessageContent, setEditingMessageContent] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
@@ -376,6 +379,7 @@ export default function HomePage() {
             username: data.username || 'Anonymous',
             message: data.message || '',
             timestamp: data.timestamp,
+            isEdited: data.isEdited,
             avatar: data.avatar,
             color: data.color,
             domicile: data.domicile,
@@ -582,6 +586,42 @@ export default function HomePage() {
     });
   };
 
+
+
+  const startEditing = (msg: Message) => {
+    if (!msg.timestamp || (Date.now() - msg.timestamp) > 30000) {
+      alert("Waktu edit pesan (30 detik) telah habis.");
+      return;
+    }
+    setEditingMessageId(msg.id);
+    setEditingMessageContent(msg.message);
+  };
+
+  const cancelEditing = () => {
+    setEditingMessageId(null);
+    setEditingMessageContent('');
+  };
+
+  const handleSaveEdit = async (msgId: string) => {
+    const trimmed = editingMessageContent.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 1000) {
+      alert("Pesan terlalu panjang (maksimum 1000 karakter)");
+      return;
+    }
+
+    try {
+      const filteredMsg = isFilterEnabled ? filterChatMessage(trimmed) : trimmed;
+      await update(ref(db, `global_messages/${msgId}`), {
+        message: filteredMsg,
+        isEdited: true
+      });
+      setEditingMessageId(null);
+      setEditingMessageContent('');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'global_messages');
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1170,8 +1210,36 @@ export default function HomePage() {
 
                         {/* Chat Bubble */}
                         <div className="relative group w-full">
+                          {editingMessageId === msg.id ? (
+                            <div className="bg-white rounded-xl border-2 border-indigo-500 shadow-lg p-2.5 flex flex-col gap-2">
+                              <textarea
+                                value={editingMessageContent}
+                                onChange={(e) => setEditingMessageContent(e.target.value)}
+                                className="w-full text-sm text-gray-900 border-none focus:outline-none focus:ring-0 resize-none rounded-lg bg-gray-50 p-2"
+                                rows={3}
+                                maxLength={1000}
+                                autoFocus
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={cancelEditing}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center"
+                                >
+                                  <X size={14} className="mr-1" /> Batal
+                                </button>
+                                <button
+                                  onClick={() => handleSaveEdit(msg.id)}
+                                  disabled={!editingMessageContent.trim()}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
+                                >
+                                  <Check size={14} className="mr-1" /> Simpan
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                          <>
                           <div
-                            className={`transition-all duration-200 shadow-sm ${
+                            className={`transition-all duration-200 shadow-sm relative ${
                               isAdminMsg
                                 ? isVideotronMode
                                   ? 'bg-amber-950/80 text-amber-200 border border-amber-800 rounded-2xl px-8 py-5 text-xl md:text-2xl lg:text-3xl font-extrabold shadow-lg'
@@ -1199,9 +1267,23 @@ export default function HomePage() {
                                     : 'text-[9px] text-white/70 mt-1'
                               }`}
                             >
+                              {msg.isEdited && <span className="mr-1 italic opacity-75">(diedit)</span>}
                               {formatTime(msg.timestamp)}
                             </div>
                           </div>
+                          
+                          {/* Edit Button */}
+                          {isMe && msg.timestamp && (Date.now() - msg.timestamp) <= 30000 && !isVideotronMode && (
+                            <button
+                              onClick={() => startEditing(msg)}
+                              className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 bg-white text-gray-500 rounded-full shadow hover:text-indigo-600 hover:bg-gray-50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                              title="Edit Pesan"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                          )}
+                          </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1218,6 +1300,18 @@ export default function HomePage() {
                 : 'border-gray-200 bg-white'
             }`}>
               {isChatEnabled ? (
+                maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser ? (
+                  <div className={`flex items-center justify-center gap-2 p-3 rounded-xl border ${
+                    isVideotronMode 
+                      ? 'bg-red-950/40 border-red-900/50 text-red-400' 
+                      : 'bg-red-50 border-red-200 text-red-600'
+                  }`}>
+                    <ShieldAlert size={16} />
+                    <span className="text-sm font-medium text-center">
+                      Anda telah mencapai batas maksimum pesan harian ({maxMessagesPerUser} pesan).
+                    </span>
+                  </div>
+                ) : (
                 <form onSubmit={handleSendMessage} className="flex gap-2.5">
                   <input
                     type="text"
@@ -1242,6 +1336,7 @@ export default function HomePage() {
                     <Send size={18} />
                   </button>
                 </form>
+                )
               ) : (
                 <div className={`flex items-center gap-3 p-3 md:p-4 rounded-xl border ${
                   isVideotronMode 
