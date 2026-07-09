@@ -48,7 +48,8 @@ import {
   Upload,
   Eye,
   EyeOff,
-  Image as ImageIcon
+  Image as ImageIcon,
+  RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -286,6 +287,8 @@ export default function AdminPage() {
   const [videotronChatBorderColor, setVideotronChatBorderColor] = useState<string>('#ffffff');
   const [videotronChatBorderOpacity, setVideotronChatBorderOpacity] = useState<number>(10);
   const [videotronQrSize, setVideotronQrSize] = useState<number>(130);
+  const [videotronQrXOffset, setVideotronQrXOffset] = useState<number>(0);
+  const [videotronQrYOffset, setVideotronQrYOffset] = useState<number>(0);
   const [videotronBgSize, setVideotronBgSize] = useState<string>('cover');
   const [videotronBlur, setVideotronBlur] = useState<number>(2);
   const [videotronOverlayEnabled, setVideotronOverlayEnabled] = useState<boolean>(true);
@@ -299,14 +302,56 @@ export default function AdminPage() {
   const [videotronQrBgEnabled, setVideotronQrBgEnabled] = useState<boolean>(true);
   const [videotronSponsorBgEnabled, setVideotronSponsorBgEnabled] = useState<boolean>(true);
   const [videotronSponsorLogo, setVideotronSponsorLogo] = useState<string>('');
+  const [videotronQrTextYOffset, setVideotronQrTextYOffset] = useState<number>(0);
+  const [videotronSponsorTextXOffset, setVideotronSponsorTextXOffset] = useState<number>(0);
+  const [videotronSponsorLogoXOffset, setVideotronSponsorLogoXOffset] = useState<number>(0);
   const [hasLoadedInitialConfig, setHasLoadedInitialConfig] = useState<boolean>(false);
   const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
-  const [videotronQrTextYOffset, setVideotronQrTextYOffset] = useState<number>(0);
-  const [videotronSupportedByTextXOffset, setVideotronSupportedByTextXOffset] = useState<number>(0);
-  const [videotronSponsorLogoXOffset, setVideotronSponsorLogoXOffset] = useState<number>(0);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
-
   const videotronEndRef = useRef<HTMLDivElement>(null);
+
+  const resetVideotronToDefault = () => {
+    setVideotronTheme('dark');
+    setVideotronScale(100);
+    setVideotronBg('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920');
+    setEventTitleSize(44);
+    setVideotronLogoLeft('');
+    setVideotronLogoRight('');
+    setVideotronLogoSize(80);
+    setVideotronQrCodeUrl('');
+    setVideotronSupportedByText('SUPPORTED BY');
+    setEventTitleColor('#ffffff');
+    setVideotronSponsorTextColor('#ffffff');
+    setVideotronSponsorTextSize(12);
+    setVideotronQrTextColor('#ffffff');
+    setVideotronQrTextSize(9);
+    setVideotronChatBgMode('blur');
+    setVideotronChatBgColor('#0f172a');
+    setVideotronChatBgOpacity(30);
+    setVideotronChatBgBlur(20);
+    setVideotronChatBorderColor('#ffffff');
+    setVideotronChatBorderOpacity(10);
+    setVideotronQrSize(130);
+    setVideotronQrXOffset(0);
+    setVideotronQrYOffset(0);
+    setVideotronBgSize('cover');
+    setVideotronBlur(2);
+    setVideotronOverlayEnabled(true);
+    setVideotronOverlayColor('#000000');
+    setVideotronOverlayOpacity(70);
+    setVideotronLogoBgEnabled(true);
+    setVideotronLogoInnerScale(100);
+    setVideotronLogoLeftInnerScale(100);
+    setVideotronLogoRightInnerScale(100);
+    setVideotronQrInnerScale(100);
+    setVideotronQrBgEnabled(true);
+    setVideotronSponsorBgEnabled(true);
+    setVideotronSponsorLogo('');
+    setVideotronQrTextYOffset(0);
+    setVideotronSponsorTextXOffset(0);
+    setVideotronSponsorLogoXOffset(0);
+    setShowResetConfirm(false);
+  };
   const lastVideotronConfigRef = useRef<any>(null);
   const [isFilterEnabled, setIsFilterEnabled] = useState<boolean>(true);
   const [isChatEnabled, setIsChatEnabled] = useState<boolean>(true);
@@ -663,6 +708,8 @@ export default function AdminPage() {
         if (val.videotronQrCodeUrl !== undefined) setVideotronQrCodeUrl(val.videotronQrCodeUrl);
         if (val.videotronSupportedByText !== undefined) setVideotronSupportedByText(val.videotronSupportedByText);
         if (val.videotronQrSize !== undefined) setVideotronQrSize(val.videotronQrSize);
+        if (val.videotronQrXOffset !== undefined) setVideotronQrXOffset(val.videotronQrXOffset);
+        if (val.videotronQrYOffset !== undefined) setVideotronQrYOffset(val.videotronQrYOffset);
         if (val.videotronBgSize !== undefined) setVideotronBgSize(val.videotronBgSize);
         if (val.videotronBlur !== undefined) setVideotronBlur(val.videotronBlur);
         if (val.videotronLogoBgEnabled !== undefined) setVideotronLogoBgEnabled(val.videotronLogoBgEnabled);
@@ -681,14 +728,14 @@ export default function AdminPage() {
         if (val.videotronQrBgEnabled !== undefined) setVideotronQrBgEnabled(val.videotronQrBgEnabled);
         if (val.videotronSponsorBgEnabled !== undefined) setVideotronSponsorBgEnabled(val.videotronSponsorBgEnabled);
         if (val.videotronSponsorLogo !== undefined) setVideotronSponsorLogo(val.videotronSponsorLogo);
+        if (val.videotronQrTextYOffset !== undefined) setVideotronQrTextYOffset(val.videotronQrTextYOffset);
+        if (val.videotronSponsorTextXOffset !== undefined) setVideotronSponsorTextXOffset(val.videotronSponsorTextXOffset);
+        if (val.videotronSponsorLogoXOffset !== undefined) setVideotronSponsorLogoXOffset(val.videotronSponsorLogoXOffset);
         if (val.eventTitleColor !== undefined) setEventTitleColor(val.eventTitleColor);
         if (val.videotronSponsorTextColor !== undefined) setVideotronSponsorTextColor(val.videotronSponsorTextColor);
         if (val.videotronSponsorTextSize !== undefined) setVideotronSponsorTextSize(val.videotronSponsorTextSize);
         if (val.videotronQrTextColor !== undefined) setVideotronQrTextColor(val.videotronQrTextColor);
         if (val.videotronQrTextSize !== undefined) setVideotronQrTextSize(val.videotronQrTextSize);
-        if (val.videotronQrTextYOffset !== undefined) setVideotronQrTextYOffset(val.videotronQrTextYOffset);
-        if (val.videotronSupportedByTextXOffset !== undefined) setVideotronSupportedByTextXOffset(val.videotronSupportedByTextXOffset);
-        if (val.videotronSponsorLogoXOffset !== undefined) setVideotronSponsorLogoXOffset(val.videotronSponsorLogoXOffset);
         if (val.videotronChatBgMode !== undefined) setVideotronChatBgMode(val.videotronChatBgMode);
         if (val.videotronChatBgColor !== undefined) setVideotronChatBgColor(val.videotronChatBgColor);
         if (val.videotronChatBgOpacity !== undefined) setVideotronChatBgOpacity(val.videotronChatBgOpacity);
@@ -704,48 +751,6 @@ export default function AdminPage() {
 
     return () => unsubscribe();
   }, []);
-
-  const handleResetDefaults = () => {
-    setVideotronTheme('light');
-    setVideotronScale(100);
-    setVideotronBg('');
-    setEventTitle('KICK OFF & NGAJIBARENG');
-    setEventTitleSize(32);
-    setVideotronLogoLeft('');
-    setVideotronLogoRight('');
-    setVideotronLogoSize(64);
-    setVideotronQrCodeUrl('');
-    setVideotronSupportedByText('SUPPORTED BY:');
-    setVideotronQrSize(130);
-    setVideotronBgSize('cover');
-    setVideotronBlur(2);
-    setVideotronLogoBgEnabled(true);
-    setVideotronLogoInnerScale(100);
-    setVideotronLogoLeftInnerScale(100);
-    setVideotronLogoRightInnerScale(100);
-    setVideotronQrInnerScale(100);
-    setVideotronQrBgEnabled(true);
-    setVideotronSponsorBgEnabled(true);
-    setVideotronSponsorLogo('');
-    setEventTitleColor('#ffffff');
-    setVideotronSponsorTextColor('#ffffff');
-    setVideotronSponsorTextSize(12);
-    setVideotronQrTextColor('#ffffff');
-    setVideotronQrTextSize(9);
-    setVideotronQrTextYOffset(0);
-    setVideotronSupportedByTextXOffset(0);
-    setVideotronSponsorLogoXOffset(0);
-    setVideotronChatBgMode('blur');
-    setVideotronChatBgColor('#0f172a');
-    setVideotronChatBgOpacity(30);
-    setVideotronChatBgBlur(20);
-    setVideotronChatBorderColor('#ffffff');
-    setVideotronChatBorderOpacity(10);
-    setVideotronOverlayEnabled(true);
-    setVideotronOverlayColor('#000000');
-    setVideotronOverlayOpacity(70);
-    setShowResetConfirm(false);
-  };
 
   // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
   useEffect(() => {
@@ -763,6 +768,8 @@ export default function AdminPage() {
       videotronQrCodeUrl,
       videotronSupportedByText,
       videotronQrSize,
+      videotronQrXOffset,
+      videotronQrYOffset,
       videotronBgSize,
       videotronBlur,
       videotronLogoBgEnabled,
@@ -773,14 +780,14 @@ export default function AdminPage() {
       videotronQrBgEnabled,
       videotronSponsorBgEnabled,
       videotronSponsorLogo,
+      videotronQrTextYOffset,
+      videotronSponsorTextXOffset,
+      videotronSponsorLogoXOffset,
       eventTitleColor,
       videotronSponsorTextColor,
       videotronSponsorTextSize,
       videotronQrTextColor,
       videotronQrTextSize,
-      videotronQrTextYOffset,
-      videotronSupportedByTextXOffset,
-      videotronSponsorLogoXOffset,
       videotronChatBgMode,
       videotronChatBgColor,
       videotronChatBgOpacity,
@@ -826,6 +833,8 @@ export default function AdminPage() {
     videotronQrCodeUrl,
     videotronSupportedByText,
     videotronQrSize,
+    videotronQrXOffset,
+    videotronQrYOffset,
     videotronBgSize,
     videotronBlur,
     videotronLogoBgEnabled,
@@ -836,14 +845,14 @@ export default function AdminPage() {
     videotronQrBgEnabled,
     videotronSponsorBgEnabled,
     videotronSponsorLogo,
+    videotronQrTextYOffset,
+    videotronSponsorTextXOffset,
+    videotronSponsorLogoXOffset,
     eventTitleColor,
     videotronSponsorTextColor,
     videotronSponsorTextSize,
     videotronQrTextColor,
     videotronQrTextSize,
-    videotronQrTextYOffset,
-    videotronSupportedByTextXOffset,
-    videotronSponsorLogoXOffset,
     videotronChatBgMode,
     videotronChatBgColor,
     videotronChatBgOpacity,
@@ -2352,7 +2361,7 @@ export default function AdminPage() {
                       </div>
 
                       {/* SCAN QR Text Settings */}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
                         <div>
                           <label className="text-[10px] text-white/55 block mb-1">Size Teks SCAN QR ({videotronQrTextSize}px)</label>
                           <input
@@ -2382,17 +2391,16 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </div>
-                      
-                      {/* SCAN QR Text Y Offset */}
-                      <div>
-                        <label className="text-[10px] text-white/55 block mb-1">Posisi Teks SCAN QR (Atas/Bawah) ({videotronQrTextYOffset}px)</label>
+
+                      <div className="mb-3">
+                        <label className="text-[10px] text-white/55 block mb-1">Posisi Y Offset Teks SCAN QR ({videotronQrTextYOffset}px)</label>
                         <input
                           type="range"
                           min="-100"
                           max="100"
                           value={videotronQrTextYOffset}
                           onChange={(e) => setVideotronQrTextYOffset(Number(e.target.value))}
-                          className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
                         />
                       </div>
 
@@ -2424,6 +2432,17 @@ export default function AdminPage() {
                           placeholder="SUPPORTED BY"
                           className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
                         />
+                        <div className="mt-2">
+                          <label className="text-[10px] text-white/55 block mb-1">Posisi X Offset Teks ({videotronSponsorTextXOffset}px)</label>
+                          <input
+                            type="range"
+                            min="-100"
+                            max="100"
+                            value={videotronSponsorTextXOffset}
+                            onChange={(e) => setVideotronSponsorTextXOffset(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
                       </div>
 
                       {/* Sponsor Logo Upload */}
@@ -2470,6 +2489,19 @@ export default function AdminPage() {
                           placeholder="Atau tempel URL logo sponsor..."
                           className="w-full px-3 py-2 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded-xl text-xs text-white"
                         />
+                        {videotronSponsorLogo && (
+                          <div className="mt-2">
+                            <label className="text-[10px] text-white/55 block mb-1">Posisi X Offset Logo ({videotronSponsorLogoXOffset}px)</label>
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={videotronSponsorLogoXOffset}
+                              onChange={(e) => setVideotronSponsorLogoXOffset(Number(e.target.value))}
+                              className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Supported By Text Settings */}
@@ -2501,31 +2533,6 @@ export default function AdminPage() {
                               className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
                             />
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] text-white/55 block mb-1">Posisi Teks (Kiri/Kanan) ({videotronSupportedByTextXOffset}px)</label>
-                          <input
-                            type="range"
-                            min="-150"
-                            max="150"
-                            value={videotronSupportedByTextXOffset}
-                            onChange={(e) => setVideotronSupportedByTextXOffset(Number(e.target.value))}
-                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-white/55 block mb-1">Posisi Logo (Kiri/Kanan) ({videotronSponsorLogoXOffset}px)</label>
-                          <input
-                            type="range"
-                            min="-150"
-                            max="150"
-                            value={videotronSponsorLogoXOffset}
-                            onChange={(e) => setVideotronSponsorLogoXOffset(Number(e.target.value))}
-                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
-                          />
                         </div>
                       </div>
 
@@ -2827,9 +2834,10 @@ export default function AdminPage() {
                   <div className="border-t border-white/10 pt-4 mt-auto flex flex-col gap-2">
                     <button
                       onClick={() => setShowResetConfirm(true)}
-                      className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-colors"
+                      className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors border border-white/10"
                     >
-                      <span>Reset Pengaturan</span>
+                      <RotateCcw size={14} />
+                      <span>Reset Default</span>
                     </button>
                     <button
                       onClick={() => {
@@ -2841,44 +2849,6 @@ export default function AdminPage() {
                       <span>Keluar Preview</span>
                     </button>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Custom Web UI Modal for Reset Confirmation */}
-            <AnimatePresence>
-              {showResetConfirm && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-                >
-                  <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="bg-slate-900 border border-white/10 p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full"
-                  >
-                    <h3 className="text-xl font-bold text-white mb-2">Reset Pengaturan?</h3>
-                    <p className="text-slate-400 text-sm mb-6">
-                      Apakah Anda yakin ingin mengembalikan semua pengaturan Videotron ke nilai default? Tindakan ini tidak dapat dibatalkan.
-                    </p>
-                    <div className="flex gap-3 justify-end">
-                      <button 
-                        onClick={() => setShowResetConfirm(false)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-sm transition-colors"
-                      >
-                        Batal
-                      </button>
-                      <button 
-                        onClick={handleResetDefaults}
-                        className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-sm shadow-md shadow-rose-600/20 transition-colors"
-                      >
-                        Ya, Reset
-                      </button>
-                    </div>
-                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -3035,13 +3005,15 @@ export default function AdminPage() {
                                 }`}>
                                   {msg.username}
                                 </div>
-                                <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full border ${
-                                  isDarkTheme 
-                                    ? 'border-white/10 text-white/50 bg-white/5' 
-                                    : 'border-slate-200 text-slate-500 bg-slate-50'
-                                }`}>
-                                  {isAdminMsg ? 'Moderator' : 'Warga Surabaya'}
-                                </span>
+                                {isAdminMsg && (
+                                  <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full border ${
+                                    isDarkTheme 
+                                      ? 'border-white/10 text-white/50 bg-white/5' 
+                                      : 'border-slate-200 text-slate-500 bg-slate-50'
+                                  }`}>
+                                    Moderator
+                                  </span>
+                                )}
                                 <span className={`text-xs md:text-sm font-mono font-bold ml-auto ${
                                   isDarkTheme ? 'text-white' : 'text-black'
                                 }`}>
@@ -3078,7 +3050,7 @@ export default function AdminPage() {
                       style={{ 
                         color: videotronSponsorTextColor, 
                         fontSize: `${videotronSponsorTextSize}px`,
-                        transform: `translateX(${videotronSupportedByTextXOffset}px)`
+                        transform: `translateX(${videotronSponsorTextXOffset}px)`
                       }}
                     >
                       {videotronSupportedByText}
@@ -3089,9 +3061,7 @@ export default function AdminPage() {
                       className={`w-full h-16 md:h-20 rounded-[16px] overflow-hidden flex items-center justify-center p-2 transition-all duration-300 ${
                         videotronSponsorBgEnabled ? 'bg-white/10 backdrop-blur-md border border-white/5' : 'bg-white/5 backdrop-blur-sm border border-white/5'
                       }`}
-                      style={{
-                        transform: `translateX(${videotronSponsorLogoXOffset}px)`
-                      }}
+                      style={{ transform: `translateX(${videotronSponsorLogoXOffset}px)` }}
                     >
                       {videotronSponsorLogo ? (
                         <img 
@@ -3143,7 +3113,7 @@ export default function AdminPage() {
                     </div>
                     {videotronQrSize > 90 && (
                       <span 
-                        className="font-black tracking-widest uppercase mt-1 text-center transition-transform"
+                        className="font-black tracking-widest uppercase mt-1 text-center transition-all duration-300"
                         style={{
                           color: videotronQrTextColor,
                           fontSize: `${videotronQrTextSize}px`,
@@ -3167,6 +3137,46 @@ export default function AdminPage() {
             >
               <Settings size={18} className={`${showVideotronSidebar ? 'rotate-90' : ''} transition-transform duration-300`} />
             </button>
+
+            {/* Custom Modal Web UI for Reset Confirmation */}
+            <AnimatePresence>
+              {showResetConfirm && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden"
+                  >
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <div className="w-12 h-12 bg-amber-500/20 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/30">
+                        <AlertCircle size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-2">Reset ke Default?</h3>
+                        <p className="text-sm text-slate-400">
+                          Semua pengaturan videotron akan dikembalikan ke nilai awal. Aksi ini tidak dapat dibatalkan.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 w-full mt-4">
+                        <button
+                          onClick={() => setShowResetConfirm(false)}
+                          className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold transition-colors"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={resetVideotronToDefault}
+                          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold shadow-md shadow-rose-600/20 transition-colors"
+                        >
+                          Ya, Reset
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
