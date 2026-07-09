@@ -290,8 +290,14 @@ export default function AdminPage() {
   const [videotronQrYOffset, setVideotronQrYOffset] = useState<number>(0);
   const [videotronBgSize, setVideotronBgSize] = useState<string>('cover');
   const [videotronBlur, setVideotronBlur] = useState<number>(2);
+  const [videotronOverlayEnabled, setVideotronOverlayEnabled] = useState<boolean>(true);
+  const [videotronOverlayColor, setVideotronOverlayColor] = useState<string>('#000000');
+  const [videotronOverlayOpacity, setVideotronOverlayOpacity] = useState<number>(70);
   const [videotronLogoBgEnabled, setVideotronLogoBgEnabled] = useState<boolean>(true);
   const [videotronLogoInnerScale, setVideotronLogoInnerScale] = useState<number>(100);
+  const [videotronLogoLeftInnerScale, setVideotronLogoLeftInnerScale] = useState<number>(100);
+  const [videotronLogoRightInnerScale, setVideotronLogoRightInnerScale] = useState<number>(100);
+  const [videotronQrInnerScale, setVideotronQrInnerScale] = useState<number>(100);
   const [videotronQrBgEnabled, setVideotronQrBgEnabled] = useState<boolean>(true);
   const [videotronSponsorBgEnabled, setVideotronSponsorBgEnabled] = useState<boolean>(true);
   const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
@@ -636,8 +642,6 @@ export default function AdminPage() {
 
   // 4. Real-time Videotron Config Listener
   useEffect(() => {
-    if (!isAdminLoggedIn) return;
-
     const configRef = ref(db, 'videotron_config');
     const unsubscribe = onValue(configRef, (snapshot) => {
       const val = snapshot.val();
@@ -660,6 +664,17 @@ export default function AdminPage() {
         if (val.videotronBlur !== undefined) setVideotronBlur(val.videotronBlur);
         if (val.videotronLogoBgEnabled !== undefined) setVideotronLogoBgEnabled(val.videotronLogoBgEnabled);
         if (val.videotronLogoInnerScale !== undefined) setVideotronLogoInnerScale(val.videotronLogoInnerScale);
+        if (val.videotronLogoLeftInnerScale !== undefined) {
+          setVideotronLogoLeftInnerScale(val.videotronLogoLeftInnerScale);
+        } else if (val.videotronLogoInnerScale !== undefined) {
+          setVideotronLogoLeftInnerScale(val.videotronLogoInnerScale);
+        }
+        if (val.videotronLogoRightInnerScale !== undefined) {
+          setVideotronLogoRightInnerScale(val.videotronLogoRightInnerScale);
+        } else if (val.videotronLogoInnerScale !== undefined) {
+          setVideotronLogoRightInnerScale(val.videotronLogoInnerScale);
+        }
+        if (val.videotronQrInnerScale !== undefined) setVideotronQrInnerScale(val.videotronQrInnerScale);
         if (val.videotronQrBgEnabled !== undefined) setVideotronQrBgEnabled(val.videotronQrBgEnabled);
         if (val.videotronSponsorBgEnabled !== undefined) setVideotronSponsorBgEnabled(val.videotronSponsorBgEnabled);
         if (val.eventTitleColor !== undefined) setEventTitleColor(val.eventTitleColor);
@@ -673,11 +688,14 @@ export default function AdminPage() {
         if (val.videotronChatBgBlur !== undefined) setVideotronChatBgBlur(val.videotronChatBgBlur);
         if (val.videotronChatBorderColor !== undefined) setVideotronChatBorderColor(val.videotronChatBorderColor);
         if (val.videotronChatBorderOpacity !== undefined) setVideotronChatBorderOpacity(val.videotronChatBorderOpacity);
+        if (val.videotronOverlayEnabled !== undefined) setVideotronOverlayEnabled(val.videotronOverlayEnabled);
+        if (val.videotronOverlayColor !== undefined) setVideotronOverlayColor(val.videotronOverlayColor);
+        if (val.videotronOverlayOpacity !== undefined) setVideotronOverlayOpacity(val.videotronOverlayOpacity);
       }
     });
 
     return () => unsubscribe();
-  }, [isAdminLoggedIn]);
+  }, []);
 
   // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
   useEffect(() => {
@@ -701,6 +719,9 @@ export default function AdminPage() {
       videotronBlur,
       videotronLogoBgEnabled,
       videotronLogoInnerScale,
+      videotronLogoLeftInnerScale,
+      videotronLogoRightInnerScale,
+      videotronQrInnerScale,
       videotronQrBgEnabled,
       videotronSponsorBgEnabled,
       eventTitleColor,
@@ -714,6 +735,9 @@ export default function AdminPage() {
       videotronChatBgBlur,
       videotronChatBorderColor,
       videotronChatBorderOpacity,
+      videotronOverlayEnabled,
+      videotronOverlayColor,
+      videotronOverlayOpacity,
     };
 
     const dbConfig = lastVideotronConfigRef.current;
@@ -755,6 +779,9 @@ export default function AdminPage() {
     videotronBlur,
     videotronLogoBgEnabled,
     videotronLogoInnerScale,
+    videotronLogoLeftInnerScale,
+    videotronLogoRightInnerScale,
+    videotronQrInnerScale,
     videotronQrBgEnabled,
     videotronSponsorBgEnabled,
     eventTitleColor,
@@ -768,6 +795,9 @@ export default function AdminPage() {
     videotronChatBgBlur,
     videotronChatBorderColor,
     videotronChatBorderOpacity,
+    videotronOverlayEnabled,
+    videotronOverlayColor,
+    videotronOverlayOpacity,
   ]);
 
   // Toggle filter handler
@@ -2162,16 +2192,34 @@ export default function AdminPage() {
                       </div>
 
                       {/* Logo Inside Container Scale */}
-                      <div>
-                        <label className="text-[10px] text-white/55 block mb-1">Skala Logo di Dalam Container ({videotronLogoInnerScale}%)</label>
-                        <input
-                          type="range"
-                          min="20"
-                          max="150"
-                          value={videotronLogoInnerScale}
-                          onChange={(e) => setVideotronLogoInnerScale(Number(e.target.value))}
-                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Skala Logo Kiri ({videotronLogoLeftInnerScale}%)</label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="150"
+                            value={videotronLogoLeftInnerScale}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setVideotronLogoLeftInnerScale(val);
+                              // Sync legacy key just in case
+                              setVideotronLogoInnerScale(val);
+                            }}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Skala Logo Kanan ({videotronLogoRightInnerScale}%)</label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="150"
+                            value={videotronLogoRightInnerScale}
+                            onChange={(e) => setVideotronLogoRightInnerScale(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -2223,16 +2271,29 @@ export default function AdminPage() {
                         />
                       </div>
 
-                      <div>
-                        <label className="text-[10px] text-white/55 block mb-1">Ukuran QR Code ({videotronQrSize}px)</label>
-                        <input
-                          type="range"
-                          min="60"
-                          max="250"
-                          value={videotronQrSize}
-                          onChange={(e) => setVideotronQrSize(Number(e.target.value))}
-                          className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Ukuran Container QR ({videotronQrSize}px)</label>
+                          <input
+                            type="range"
+                            min="60"
+                            max="250"
+                            value={videotronQrSize}
+                            onChange={(e) => setVideotronQrSize(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/55 block mb-1">Skala Gambar QR ({videotronQrInnerScale}%)</label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="150"
+                            value={videotronQrInnerScale}
+                            onChange={(e) => setVideotronQrInnerScale(Number(e.target.value))}
+                            className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
+                          />
+                        </div>
                       </div>
 
                       {/* SCAN QR Text Settings */}
@@ -2440,6 +2501,58 @@ export default function AdminPage() {
                           className="w-full accent-indigo-500 h-1.5 bg-slate-950 rounded-lg cursor-pointer"
                         />
                       </div>
+
+                      {/* Background Overlay Layer Settings */}
+                      <div className="pt-2 border-t border-white/5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-white/70 font-bold">Layer Overlay Gelap/Solid</span>
+                          <button
+                            onClick={() => setVideotronOverlayEnabled(!videotronOverlayEnabled)}
+                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wide transition-all ${
+                              videotronOverlayEnabled 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'bg-slate-950 text-white/40 border border-white/10'
+                            }`}
+                          >
+                            {videotronOverlayEnabled ? 'ON' : 'OFF'}
+                          </button>
+                        </div>
+                        
+                        {videotronOverlayEnabled && (
+                          <div className="space-y-2 pt-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] text-white/55 block mb-0.5">Warna Layer</label>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={videotronOverlayColor}
+                                    onChange={(e) => setVideotronOverlayColor(e.target.value)}
+                                    className="w-6 h-6 rounded bg-transparent border border-white/20 cursor-pointer shrink-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={videotronOverlayColor}
+                                    onChange={(e) => setVideotronOverlayColor(e.target.value)}
+                                    className="w-full px-1 py-0.5 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:outline-none rounded text-[9px] font-mono text-white"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-white/55 block mb-0.5">Opasitas ({videotronOverlayOpacity}%)</label>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={videotronOverlayOpacity}
+                                  onChange={(e) => setVideotronOverlayOpacity(Number(e.target.value))}
+                                  className="w-full accent-indigo-500 h-1 bg-slate-950 rounded-lg cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* General Scale and Bubble Theme Options */}
@@ -2621,8 +2734,27 @@ export default function AdminPage() {
                 backgroundPosition: 'center',
               }}
             >
-              {/* Ambient Dark Overlay for elegant contrast & readability */}
-              <div className="absolute inset-0 bg-slate-950/70 pointer-events-none" style={{ backdropFilter: `blur(${videotronBlur}px)` }} />
+              {/* Blur backdrop-filter layer */}
+              {videotronBlur > 0 && (
+                <div 
+                  className="absolute inset-0 pointer-events-none" 
+                  style={{ 
+                    backdropFilter: `blur(${videotronBlur}px)`,
+                    WebkitBackdropFilter: `blur(${videotronBlur}px)`
+                  }} 
+                />
+              )}
+
+              {/* Dynamic solid/dark color overlay layer with custom color and opacity */}
+              {videotronOverlayEnabled && (
+                <div 
+                  className="absolute inset-0 pointer-events-none" 
+                  style={{ 
+                    backgroundColor: videotronOverlayColor,
+                    opacity: videotronOverlayOpacity / 100,
+                  }} 
+                />
+              )}
 
               {/* Real-time scalable view area */}
               <div 
@@ -2637,9 +2769,9 @@ export default function AdminPage() {
                     style={{ width: `${videotronLogoSize}px`, height: `${videotronLogoSize}px` }}
                   >
                     {videotronLogoLeft ? (
-                      <img src={videotronLogoLeft} alt="Logo Kiri" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                      <img src={videotronLogoLeft} alt="Logo Kiri" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoLeftInnerScale / 100})`, transformOrigin: 'center' }} />
                     ) : chatIcon ? (
-                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoLeftInnerScale / 100})`, transformOrigin: 'center' }} />
                     ) : (
                       <span className="text-xs font-black text-white/70 tracking-widest">LOGO</span>
                     )}
@@ -2661,9 +2793,9 @@ export default function AdminPage() {
                     style={{ width: `${videotronLogoSize}px`, height: `${videotronLogoSize}px` }}
                   >
                     {videotronLogoRight ? (
-                      <img src={videotronLogoRight} alt="Logo Kanan" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                      <img src={videotronLogoRight} alt="Logo Kanan" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoRightInnerScale / 100})`, transformOrigin: 'center' }} />
                     ) : chatIcon ? (
-                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoInnerScale / 100})`, transformOrigin: 'center' }} />
+                      <img src={chatIcon} alt="Logo" className="w-full h-full object-contain" style={{ transform: `scale(${videotronLogoRightInnerScale / 100})`, transformOrigin: 'center' }} />
                     ) : (
                       <span className="text-xs font-black text-white/70 tracking-widest">LOGO</span>
                     )}
@@ -2769,7 +2901,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* FOOTER ROW: SPONSORS (LEFT) & QR CODE (RIGHT) PLACED HORIZONTALLY */}
-                <div className="w-full flex flex-col md:flex-row items-stretch gap-4">
+                <div className="w-full flex flex-row items-stretch gap-4">
                   {/* Sponsor Box */}
                   <div className={`flex-1 flex flex-col items-start gap-1.5 p-4 rounded-[24px] transition-all duration-300 ${
                     videotronSponsorBgEnabled 
@@ -2825,7 +2957,7 @@ export default function AdminPage() {
                       transform: `translate(${videotronQrXOffset}px, ${videotronQrYOffset}px)`,
                     }}
                   >
-                    <div className="w-full h-full flex flex-col items-center justify-center">
+                    <div className="w-full h-full flex flex-col items-center justify-center" style={{ transform: `scale(${videotronQrInnerScale / 100})`, transformOrigin: 'center' }}>
                       {videotronQrCodeUrl ? (
                         <img src={videotronQrCodeUrl} alt="QR Code" className="w-full h-full object-contain rounded-lg" />
                       ) : (
