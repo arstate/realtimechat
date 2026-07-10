@@ -1,9 +1,10 @@
 'use client';
-
-import dynamic from 'next/dynamic';
-
-const ChatApp = dynamic(() => import('./chat-app'), { ssr: false });
+import { useState, useEffect } from 'react';
+import ChatApp from './chat-app';
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   return <ChatApp />;
 }

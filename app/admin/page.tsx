@@ -1,9 +1,10 @@
 'use client';
-
-import dynamic from 'next/dynamic';
-
-const AdminPanel = dynamic(() => import('./admin-panel'), { ssr: false });
+import { useState, useEffect } from 'react';
+import AdminPanel from './admin-panel';
 
 export default function AdminPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   return <AdminPanel />;
 }

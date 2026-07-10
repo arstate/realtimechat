@@ -311,6 +311,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const videotronEndRef = useRef<HTMLDivElement>(null);
+  const lastLoadedVideotronViewIdRef = useRef<string | null>(initialPreviewId || null);
 
   const resetVideotronToDefault = () => {
     setVideotronTheme('dark');
@@ -742,6 +743,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
     if (!isAdminLoggedIn) return;
     const configRef = ref(db, activeVideotronViewId ? `videotron_views/${activeVideotronViewId}/config` : 'videotron_config');
     const unsubscribe = onValue(configRef, (snapshot) => {
+      lastLoadedVideotronViewIdRef.current = activeVideotronViewId;
       const val = snapshot.val();
       if (val) {
         lastVideotronConfigRef.current = val;
@@ -803,6 +805,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
   useEffect(() => {
     if (!isAdminLoggedIn || !hasLoadedInitialConfig) return;
+    if (activeVideotronViewId !== lastLoadedVideotronViewIdRef.current) return;
 
     const currentConfig = {
       videotronTheme,
