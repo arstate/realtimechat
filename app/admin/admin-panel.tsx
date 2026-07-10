@@ -264,6 +264,8 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   const [showUnbanAllConfirm, setShowUnbanAllConfirm] = useState<boolean>(false);
   const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState<string | null>(null);
   const [showVideotronPreview, setShowVideotronPreview] = useState<boolean>(false);
+  const [showDeleteViewConfirm, setShowDeleteViewConfirm] = useState<string | null>(null);
+  const [showSettingsButton, setShowSettingsButton] = useState<boolean>(true);
   const [videotronTheme, setVideotronTheme] = useState<'dark' | 'light'>('dark');
   const [videotronScale, setVideotronScale] = useState<number>(100);
   const [videotronBg, setVideotronBg] = useState<string>('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920');
@@ -388,6 +390,19 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Asset pre-loading and caching effect
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showVideotronPreview && (e.key === 'h' || e.key === 'H')) {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+          return;
+        }
+        setShowSettingsButton(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showVideotronPreview]);
+
   useEffect(() => {
     let isMounted = true;
     
@@ -783,7 +798,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAdminLoggedIn, activeVideotronViewId]);
 
   // 5. Sync Videotron Config to Realtime Database (with 300ms debounce)
   useEffect(() => {
@@ -895,6 +910,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
     videotronOverlayEnabled,
     videotronOverlayColor,
     videotronOverlayOpacity,
+    activeVideotronViewId,
   ]);
 
   // Toggle filter handler
@@ -1825,38 +1841,37 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
                         <div key={view.id} className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col shadow-sm">
                           <h3 className="font-bold text-gray-900 text-lg mb-1">{view.name}</h3>
                           <p className="text-xs text-gray-500 font-mono mb-4 break-all bg-gray-50 p-2 rounded">
-                            {typeof window !== 'undefined' ? `${window.location.origin}/admin/preview-${view.id}` : `/admin/preview-${view.id}`}
+                            {typeof window !== 'undefined' ? `${window.location.origin}/admin/view-${view.id}` : `/admin/view-${view.id}`}
                           </p>
                           <div className="flex items-center gap-2 mt-auto pt-4 border-t border-gray-100">
                             <button
                               onClick={() => {
-                                setActiveVideotronViewId(view.id);
-                                setShowVideotronPreview(true);
+                                window.location.href = `/admin/view-${view.id}`;
                               }}
-                              className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-colors"
+                              className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                             >
                               Edit Layout
                             </button>
                             <button
                               onClick={async () => {
-                                const newId = `view_${Date.now()}`;
+                                const newName = `${view.name} (Copy)`;
+                                const baseSlug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                const newId = `${baseSlug}-${Date.now().toString().slice(-4)}`;
                                 await set(ref(db, `videotron_views/${newId}`), {
-                                  name: `${view.name} (Copy)`,
+                                  name: newName,
                                   config: view.config || {}
                                 });
                               }}
-                              className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-bold transition-colors"
+                              className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                               title="Duplikat View"
                             >
                               Duplicate
                             </button>
                             <button
-                              onClick={async () => {
-                                if (confirm('Hapus view ini?')) {
-                                  await remove(ref(db, `videotron_views/${view.id}`));
-                                }
+                              onClick={() => {
+                                setShowDeleteViewConfirm(view.id);
                               }}
-                              className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors"
+                              className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                               title="Hapus View"
                             >
                               <Trash2 size={14} />
@@ -1926,7 +1941,8 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
                           <button
                             onClick={async () => {
                               if (!newViewName.trim()) return;
-                              const newId = `view_${Date.now()}`;
+                              const baseSlug = newViewName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                              const newId = baseSlug;
                               
                               // Create view with current default config as starting point
                               let initialConfig = {};
@@ -2250,6 +2266,54 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
                 </button>
                 <button
                   onClick={confirmDeleteAvatar}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm cursor-pointer font-bold"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showDeleteViewConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: -15 }}
+              className="w-full max-w-sm bg-white p-6 rounded-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4 shadow-xl border border-gray-200"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Hapus View Ini?</h3>
+                <p className="text-sm text-gray-500 mt-1">View videotron ini akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={() => setShowDeleteViewConfirm(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors text-sm cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={async () => {
+                    if (showDeleteViewConfirm) {
+                      const id = showDeleteViewConfirm;
+                      setShowDeleteViewConfirm(null);
+                      try {
+                        await remove(ref(db, `videotron_views/${id}`));
+                      } catch (error) {
+                        console.error(error);
+                      }
+                    }
+                  }}
                   className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md shadow-red-600/20 transition-colors text-sm cursor-pointer font-bold"
                 >
                   Ya, Hapus
@@ -3332,13 +3396,15 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
             </div>
 
             {/* Toggle menu floating badge - Icon Only Settings, Pojok Kiri Bawah Kecil */}
-            <button
-              onClick={() => setShowVideotronSidebar(prev => !prev)}
-              className="fixed bottom-4 left-4 z-[120] w-9 h-9 flex items-center justify-center bg-slate-900/60 hover:bg-indigo-600 hover:text-white text-white/70 rounded-xl border border-white/10 backdrop-blur-md shadow-lg transition-all duration-200 cursor-pointer"
-              title={showVideotronSidebar ? "Sembunyikan Menu" : "Tampilkan Menu"}
-            >
-              <Settings size={18} className={`${showVideotronSidebar ? 'rotate-90' : ''} transition-transform duration-300`} />
-            </button>
+            {showSettingsButton && (
+              <button
+                onClick={() => setShowVideotronSidebar(prev => !prev)}
+                className="fixed bottom-4 left-4 z-[120] w-9 h-9 flex items-center justify-center bg-slate-900/60 hover:bg-indigo-600 hover:text-white text-white/70 rounded-xl border border-white/10 backdrop-blur-md shadow-lg transition-all duration-200 cursor-pointer"
+                title={showVideotronSidebar ? "Sembunyikan Menu" : "Tampilkan Menu"}
+              >
+                <Settings size={18} className={`${showVideotronSidebar ? 'rotate-90' : ''} transition-transform duration-300`} />
+              </button>
+            )}
 
             {/* Custom Modal Web UI for Reset Confirmation */}
             <AnimatePresence>
