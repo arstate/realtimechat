@@ -6,6 +6,8 @@ const AdminPanel = dynamic(() => import('../admin-panel'), { ssr: false });
 
 export default function AdminPreviewPage() {
   const params = useParams();
-  const id = params?.id ? (Array.isArray(params.id) ? params.id[0] : params.id) : undefined;
+  const viewIdParam = params?.viewId ? (Array.isArray(params.viewId) ? params.viewId[0] : params.viewId) : '';
+  const id = viewIdParam.startsWith('view-') ? viewIdParam.substring(5) : viewIdParam;
   return <AdminPanel initialPreviewId={id} />;
 }
+
