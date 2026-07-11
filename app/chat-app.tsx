@@ -80,72 +80,6 @@ const COLORS = [
 
 export default function HomePage() {
 
-  const [visualViewportHeight, setVisualViewportHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const updateViewport = () => {
-      if (window.visualViewport) {
-        setVisualViewportHeight(window.visualViewport.height);
-      } else {
-        setVisualViewportHeight(window.innerHeight);
-      }
-      
-      // Keep scroll state reset to zero on viewport resize/scroll
-      if (window.innerWidth < 768) {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-      }
-    };
-
-    updateViewport();
-    
-    const handleScrollReset = () => {
-      if (window.innerWidth < 768) {
-        if (window.scrollY !== 0) {
-          window.scrollTo(0, 0);
-        }
-        if (window.visualViewport && window.visualViewport.offsetTop !== 0) {
-          window.scrollTo(0, 0);
-        }
-      }
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewport);
-      window.visualViewport.addEventListener('scroll', updateViewport);
-    } else {
-      window.addEventListener('resize', updateViewport);
-    }
-
-    window.addEventListener('scroll', handleScrollReset, { passive: true });
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewport);
-        window.visualViewport.removeEventListener('scroll', updateViewport);
-      } else {
-        window.removeEventListener('resize', updateViewport);
-      }
-      window.removeEventListener('scroll', handleScrollReset);
-    };
-  }, []);
-
-  const handleInputFocus = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      // Run multiple times as keyboard opens to battle native browser scrolling
-      [30, 80, 150, 300, 500].forEach((delay) => {
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'instant' });
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
-        }, delay);
-      });
-    }
-  };
-
   const [username, setUsername] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; banUntil: number | null }>({ isBanned: false, banUntil: null });
@@ -197,6 +131,39 @@ export default function HomePage() {
   const [downloadStatus, setDownloadStatus] = useState<string>('Menyiapkan koneksi aman...');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const [viewportStyle, setViewportStyle] = useState({ height: '100dvh', top: '0px' });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleViewportChange = () => {
+      if (window.innerWidth < 768) {
+        setViewportStyle({
+          height: `${window.visualViewport!.height}px`,
+          top: `${window.visualViewport!.offsetTop}px`
+        });
+        window.scrollTo(0, 0);
+        // Ensure the chat stays scrolled to the bottom when the keyboard opens
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+        }
+      } else {
+        setViewportStyle({ height: '100dvh', top: '0px' });
+      }
+    };
+
+    window.visualViewport.addEventListener('resize', handleViewportChange);
+    window.visualViewport.addEventListener('scroll', handleViewportChange);
+    handleViewportChange();
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+      }
+    };
+  }, []);
   
   // Videotron Auto-scrolling controller
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -575,7 +542,7 @@ export default function HomePage() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages, isVideotronMode, visualViewportHeight]);
+  }, [messages, isVideotronMode]);
 
   // 4. Real-time Chat & Filter Enabled State Subscription
   useEffect(() => {
@@ -884,20 +851,13 @@ export default function HomePage() {
     );
   }
 
-  const mainStyle = typeof window !== 'undefined' && window.innerWidth < 768
-    ? { 
-        height: visualViewportHeight ? `${visualViewportHeight}px` : '100dvh',
-        minHeight: '0px',
-      }
-    : {};
-
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   return (
     <main 
-      style={mainStyle}
-      className={`relative z-10 flex flex-col items-center justify-center p-0 md:p-6 overflow-hidden w-full ${
-        isMobile ? 'h-full min-h-0' : 'min-h-screen md:min-h-screen'
+      style={isMobile ? viewportStyle : {}}
+      className={`z-10 flex flex-col items-center justify-center p-0 md:p-6 overflow-hidden w-full bg-slate-50 md:bg-transparent ${
+        isMobile ? 'fixed inset-x-0' : 'relative min-h-screen'
       }`}
     >
       {/* Downloading Data Loader Overlay */}
@@ -1051,7 +1011,7 @@ export default function HomePage() {
                           required
                           value={phoneInput}
                           onChange={(e) => setPhoneInput(e.target.value)}
-                          onFocus={handleInputFocus}
+                          
                           maxLength={15}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
@@ -1085,7 +1045,7 @@ export default function HomePage() {
                           placeholder="Masukkan nama..."
                           value={nameInput}
                           onChange={(e) => setNameInput(e.target.value)}
-                          onFocus={handleInputFocus}
+                          
                           maxLength={30}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
@@ -1333,7 +1293,7 @@ export default function HomePage() {
                               <textarea
                                 value={editingMessageContent}
                                 onChange={(e) => setEditingMessageContent(e.target.value)}
-                                onFocus={handleInputFocus}
+                                
                                 className="w-full text-base md:text-sm text-gray-900 border-none focus:outline-none focus:ring-0 resize-none rounded-lg bg-gray-50 p-2"
                                 rows={3}
                                 maxLength={1000}
@@ -1439,7 +1399,7 @@ export default function HomePage() {
                     placeholder={(maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser) ? `Batas pesan harian tercapai` : `Menulis sebagai ${username}...`}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    onFocus={handleInputFocus}
+                    
                     className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
                       isVideotronMode 
                         ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
