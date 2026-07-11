@@ -24,7 +24,7 @@ service cloud.firestore {
     match /admin_sessions/{uid} {
       allow create: if isSignedIn() 
         && uid == request.auth.uid 
-        && incoming().password == "pemkot2026" 
+        && incoming().password == "surabaya2026" 
         && incoming().timestamp == request.time;
       allow read: if isSignedIn() && uid == request.auth.uid;
       allow delete: if isSignedIn() && uid == request.auth.uid;

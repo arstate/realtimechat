@@ -308,7 +308,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   const [videotronSponsorTextXOffset, setVideotronSponsorTextXOffset] = useState<number>(0);
   const [videotronSponsorLogoXOffset, setVideotronSponsorLogoXOffset] = useState<number>(0);
   const [hasLoadedInitialConfig, setHasLoadedInitialConfig] = useState<boolean>(false);
-  const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
+  const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const videotronEndRef = useRef<HTMLDivElement>(null);
   const videotronScrollContainerRef = useRef<HTMLDivElement>(null);
@@ -567,7 +567,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   // 1. Check local storage for admin session
   useEffect(() => {
     const adminSession = localStorage.getItem('surabaya_admin_session');
-    if (adminSession === 'pemkot2026') {
+    if (adminSession === 'surabaya2026' || adminSession === 'pemkot2026') {
       setIsAdminLoggedIn(true);
     }
     setIsVerifying(false);
@@ -580,6 +580,13 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
       setShowVideotronPreview(true);
     }
   }, [isAdminLoggedIn, initialPreviewId]);
+
+  // Hide videotron edit sidebar automatically whenever videotron preview is opened
+  useEffect(() => {
+    if (showVideotronPreview) {
+      setShowVideotronSidebar(false);
+    }
+  }, [showVideotronPreview]);
   
 // 2. Real-time Messages Listener (Only for logged-in admins)
   useEffect(() => {
@@ -1225,7 +1232,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
     e.preventDefault();
 
     setIsVerifying(true);
-    if (password === 'pemkot2026') {
+    if (password === 'surabaya2026') {
       localStorage.setItem('surabaya_admin_session', password);
       setIsAdminLoggedIn(true);
     } else {
