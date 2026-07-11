@@ -146,21 +146,7 @@ export default function HomePage() {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    const scrollToBottomFast = () => {
-      // Cancel any ongoing upward scrolling
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      isScrollingUpRef.current = false;
-
-      // Scroll to bottom smoothly and quickly
-      scrollContainer.scrollTo({
-        top: scrollContainer.scrollHeight,
-        behavior: 'smooth'
-      });
-    };
-
+    // Helper to start scrolling up smoothly
     const startUpwardScroll = () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -175,8 +161,8 @@ export default function HomePage() {
 
         // Only scroll if container is actually scrollable
         if (scrollContainer.scrollHeight > scrollContainer.clientHeight) {
-          // Speed of 0.6 pixels per frame (approx. 36px/sec at 60Hz), very readable
-          currentScrollTop -= 0.6;
+          // Speed of 0.8 pixels per frame (approx. 48px/sec at 60Hz), very readable
+          currentScrollTop -= 0.8;
           scrollContainer.scrollTop = currentScrollTop;
 
           // If reached the top, reset to bottom to loop
@@ -191,6 +177,7 @@ export default function HomePage() {
       animationFrameRef.current = requestAnimationFrame(scrollStep);
     };
 
+    // Helper to reset the 10-second idle timer
     const resetIdleTimer = () => {
       if (idleTimeoutRef.current) {
         clearTimeout(idleTimeoutRef.current);
@@ -207,23 +194,40 @@ export default function HomePage() {
       }, 10000);
     };
 
-    if (messages.length > 0) {
-      if (lastMsgCountRef.current === 0) {
+    // Helper to scroll to bottom smoothly and quickly
+    const scrollToBottomFast = () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      isScrollingUpRef.current = false;
+
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    };
+
+    const currentCount = messages.length;
+    const previousCount = lastMsgCountRef.current;
+
+    if (currentCount > 0) {
+      if (previousCount === 0) {
         // Initial messages loading
-        lastMsgCountRef.current = messages.length;
+        lastMsgCountRef.current = currentCount;
         // Scroll to bottom immediately on start
         setTimeout(() => {
           scrollContainer.scrollTop = scrollContainer.scrollHeight;
           resetIdleTimer();
-        }, 100);
-      } else if (messages.length > lastMsgCountRef.current) {
+        }, 300);
+      } else if (currentCount > previousCount) {
         // New messages arrived! Priority is scrolling to bottom and restarting timer
-        lastMsgCountRef.current = messages.length;
+        lastMsgCountRef.current = currentCount;
         scrollToBottomFast();
         resetIdleTimer();
-      } else if (messages.length < lastMsgCountRef.current) {
-        // Handle deletion
-        lastMsgCountRef.current = messages.length;
+      } else if (currentCount < previousCount) {
+        // Handle message deletion
+        lastMsgCountRef.current = currentCount;
       }
     }
 
@@ -231,7 +235,7 @@ export default function HomePage() {
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [messages, isVideotronMode]);
+  }, [messages.length, isVideotronMode]);
 
   // Asset pre-loading and caching effect
   useEffect(() => {
