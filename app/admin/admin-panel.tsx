@@ -311,6 +311,11 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
   const [showVideotronSidebar, setShowVideotronSidebar] = useState<boolean>(true);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const videotronEndRef = useRef<HTMLDivElement>(null);
+  const videotronScrollContainerRef = useRef<HTMLDivElement>(null);
+  const videotronAnimationFrameRef = useRef<number | null>(null);
+  const videotronIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videotronIsScrollingUpRef = useRef<boolean>(false);
+  const videotronLastMsgCountRef = useRef<number>(0);
   const lastLoadedVideotronViewIdRef = useRef<string | null>(initialPreviewId || null);
 
   const resetVideotronToDefault = () => {
@@ -632,11 +637,114 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
     return () => unsubscribe();
   }, [isAdminLoggedIn]);
 
-  // Scroll to bottom whenever messages list changes
+  // Scroll to bottom whenever messages list changes for admin chat view
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    videotronEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!showVideotronPreview) {
+      videotronEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, showVideotronPreview]);
+
+  // Videotron Auto-scrolling controller for Editor Mode
+  useEffect(() => {
+    if (!showVideotronPreview) return;
+
+    const scrollContainer = videotronScrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const startUpwardScroll = () => {
+      if (videotronAnimationFrameRef.current) {
+        cancelAnimationFrame(videotronAnimationFrameRef.current);
+      }
+      videotronIsScrollingUpRef.current = true;
+
+      // Track precise scroll position as a float for buttery smoothness
+      let currentScrollTop = scrollContainer.scrollTop;
+
+      const scrollStep = () => {
+        if (!videotronIsScrollingUpRef.current || !scrollContainer) return;
+
+        // Only scroll if container is actually scrollable
+        if (scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+          // Check if scroll position has been modified externally
+          if (Math.abs(scrollContainer.scrollTop - currentScrollTop) > 5) {
+            currentScrollTop = scrollContainer.scrollTop;
+          }
+          // Speed of 0.8 pixels per frame (approx. 48px/sec at 60Hz), very readable
+          currentScrollTop -= 0.8;
+          scrollContainer.scrollTop = currentScrollTop;
+
+          // If reached the top, reset to bottom to loop
+          if (scrollContainer.scrollTop <= 1) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            currentScrollTop = scrollContainer.scrollHeight;
+          }
+        }
+        videotronAnimationFrameRef.current = requestAnimationFrame(scrollStep);
+      };
+
+      videotronAnimationFrameRef.current = requestAnimationFrame(scrollStep);
+    };
+
+    const resetIdleTimer = () => {
+      if (videotronIdleTimeoutRef.current) {
+        clearTimeout(videotronIdleTimeoutRef.current);
+      }
+      if (videotronAnimationFrameRef.current) {
+        cancelAnimationFrame(videotronAnimationFrameRef.current);
+        videotronAnimationFrameRef.current = null;
+      }
+      videotronIsScrollingUpRef.current = false;
+
+      // Start 10 seconds timer
+      videotronIdleTimeoutRef.current = setTimeout(() => {
+        startUpwardScroll();
+      }, 10000);
+    };
+
+    const scrollToBottomFast = () => {
+      if (videotronAnimationFrameRef.current) {
+        cancelAnimationFrame(videotronAnimationFrameRef.current);
+        videotronAnimationFrameRef.current = null;
+      }
+      videotronIsScrollingUpRef.current = false;
+
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    };
+
+    const currentCount = messages.length;
+    const previousCount = videotronLastMsgCountRef.current;
+
+    if (currentCount > 0) {
+      if (previousCount === 0) {
+        // Initial messages loading
+        videotronLastMsgCountRef.current = currentCount;
+        // Scroll to bottom immediately on start
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+          }
+          resetIdleTimer();
+        }, 300);
+      } else if (currentCount > previousCount) {
+        // New messages arrived! Priority is scrolling to bottom and restarting timer
+        videotronLastMsgCountRef.current = currentCount;
+        scrollToBottomFast();
+        resetIdleTimer();
+      } else if (currentCount < previousCount) {
+        // Handle message deletion
+        videotronLastMsgCountRef.current = currentCount;
+      }
+    }
+
+    return () => {
+      if (videotronIdleTimeoutRef.current) clearTimeout(videotronIdleTimeoutRef.current);
+      if (videotronAnimationFrameRef.current) cancelAnimationFrame(videotronAnimationFrameRef.current);
+    };
+  }, [messages.length, showVideotronPreview]);
 
   // 3. Real-time Chat & Filter Enabled State Subscription
   useEffect(() => {
@@ -3218,6 +3326,7 @@ export default function AdminPage({ initialPreviewId }: { initialPreviewId?: str
                   />
                   {/* Scrolling message list */}
                   <div 
+                    ref={videotronScrollContainerRef}
                     className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pt-8 pb-8"
                     style={{
                       WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)',
