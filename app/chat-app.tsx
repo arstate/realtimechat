@@ -112,6 +112,16 @@ export default function HomePage() {
     };
   }, []);
 
+  const handleInputFocus = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 80);
+    }
+  };
+
   const [username, setUsername] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; banUntil: number | null }>({ isBanned: false, banUntil: null });
@@ -850,8 +860,11 @@ export default function HomePage() {
     );
   }
 
-  const mainStyle = typeof window !== 'undefined' && window.innerWidth < 768 && visualViewportHeight
-    ? { height: `${visualViewportHeight}px` }
+  const mainStyle = typeof window !== 'undefined' && window.innerWidth < 768
+    ? { 
+        height: visualViewportHeight ? `${visualViewportHeight}px` : '100dvh',
+        minHeight: '0px',
+      }
     : {};
 
   return (
@@ -937,7 +950,7 @@ export default function HomePage() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -15 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="w-full max-w-md glass-panel p-8 relative overflow-hidden"
+            className="w-full max-w-md h-full md:h-auto glass-panel p-6 md:p-8 relative overflow-y-auto max-h-full rounded-none md:rounded-[32px] flex flex-col justify-center"
           >
             {/* Top decorative gradient bar */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
@@ -1010,6 +1023,7 @@ export default function HomePage() {
                           required
                           value={phoneInput}
                           onChange={(e) => setPhoneInput(e.target.value)}
+                          onFocus={handleInputFocus}
                           maxLength={15}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
@@ -1043,6 +1057,7 @@ export default function HomePage() {
                           placeholder="Masukkan nama..."
                           value={nameInput}
                           onChange={(e) => setNameInput(e.target.value)}
+                          onFocus={handleInputFocus}
                           maxLength={30}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
@@ -1290,6 +1305,7 @@ export default function HomePage() {
                               <textarea
                                 value={editingMessageContent}
                                 onChange={(e) => setEditingMessageContent(e.target.value)}
+                                onFocus={handleInputFocus}
                                 className="w-full text-base md:text-sm text-gray-900 border-none focus:outline-none focus:ring-0 resize-none rounded-lg bg-gray-50 p-2"
                                 rows={3}
                                 maxLength={1000}
@@ -1395,6 +1411,7 @@ export default function HomePage() {
                     placeholder={(maxMessagesPerUser !== null && userMessageCount >= maxMessagesPerUser) ? `Batas pesan harian tercapai` : `Menulis sebagai ${username}...`}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
+                    onFocus={handleInputFocus}
                     className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
                       isVideotronMode 
                         ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
