@@ -132,6 +132,106 @@ export default function HomePage() {
   const [downloadStatus, setDownloadStatus] = useState<string>('Menyiapkan koneksi aman...');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Videotron Auto-scrolling controller
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingUpRef = useRef<boolean>(false);
+  const lastMsgCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isVideotronMode) return;
+
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const scrollToBottomFast = () => {
+      // Cancel any ongoing upward scrolling
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      isScrollingUpRef.current = false;
+
+      // Scroll to bottom smoothly and quickly
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    };
+
+    const startUpwardScroll = () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      isScrollingUpRef.current = true;
+
+      // Track precise scroll position as a float for buttery smoothness
+      let currentScrollTop = scrollContainer.scrollTop;
+
+      const scrollStep = () => {
+        if (!isScrollingUpRef.current || !scrollContainer) return;
+
+        // Only scroll if container is actually scrollable
+        if (scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+          // Speed of 0.6 pixels per frame (approx. 36px/sec at 60Hz), very readable
+          currentScrollTop -= 0.6;
+          scrollContainer.scrollTop = currentScrollTop;
+
+          // If reached the top, reset to bottom to loop
+          if (scrollContainer.scrollTop <= 1) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            currentScrollTop = scrollContainer.scrollTop;
+          }
+        }
+        animationFrameRef.current = requestAnimationFrame(scrollStep);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(scrollStep);
+    };
+
+    const resetIdleTimer = () => {
+      if (idleTimeoutRef.current) {
+        clearTimeout(idleTimeoutRef.current);
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      isScrollingUpRef.current = false;
+
+      // Start 10 seconds timer
+      idleTimeoutRef.current = setTimeout(() => {
+        startUpwardScroll();
+      }, 10000);
+    };
+
+    if (messages.length > 0) {
+      if (lastMsgCountRef.current === 0) {
+        // Initial messages loading
+        lastMsgCountRef.current = messages.length;
+        // Scroll to bottom immediately on start
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+          resetIdleTimer();
+        }, 100);
+      } else if (messages.length > lastMsgCountRef.current) {
+        // New messages arrived! Priority is scrolling to bottom and restarting timer
+        lastMsgCountRef.current = messages.length;
+        scrollToBottomFast();
+        resetIdleTimer();
+      } else if (messages.length < lastMsgCountRef.current) {
+        // Handle deletion
+        lastMsgCountRef.current = messages.length;
+      }
+    }
+
+    return () => {
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [messages, isVideotronMode]);
 
   // Asset pre-loading and caching effect
   useEffect(() => {
@@ -401,8 +501,9 @@ export default function HomePage() {
 
   // Scroll to bottom whenever messages list changes
   useEffect(() => {
+    if (isVideotronMode) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isVideotronMode]);
 
   // 4. Real-time Chat & Filter Enabled State Subscription
   useEffect(() => {
@@ -1044,11 +1145,14 @@ export default function HomePage() {
             </header>
 
             {/* Chat Messages Area */}
-            <div className={`flex-1 overflow-y-auto transition-colors duration-300 ${
-              isVideotronMode 
-                ? 'p-8 space-y-6 bg-slate-950 scrollbar-thin scrollbar-thumb-slate-800' 
-                : 'p-6 space-y-4 bg-transparent'
-            }`}>
+            <div 
+              ref={scrollContainerRef}
+              className={`flex-1 overflow-y-auto transition-colors duration-300 ${
+                isVideotronMode 
+                  ? 'p-8 space-y-6 bg-slate-950 scrollbar-thin scrollbar-thumb-slate-800' 
+                  : 'p-6 space-y-4 bg-transparent'
+              }`}
+            >
               {isLoading ? (
                 <div className="h-full flex flex-col items-center justify-center space-y-3">
                   <div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" />
