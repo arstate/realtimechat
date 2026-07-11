@@ -80,6 +80,37 @@ const COLORS = [
 
 export default function HomePage() {
 
+  const [visualViewportHeight, setVisualViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const updateViewport = () => {
+      if (window.visualViewport) {
+        setVisualViewportHeight(window.visualViewport.height);
+      } else {
+        setVisualViewportHeight(window.innerHeight);
+      }
+    };
+
+    updateViewport();
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewport);
+      window.visualViewport.addEventListener('scroll', updateViewport);
+    } else {
+      window.addEventListener('resize', updateViewport);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewport);
+        window.visualViewport.removeEventListener('scroll', updateViewport);
+      } else {
+        window.removeEventListener('resize', updateViewport);
+      }
+    };
+  }, []);
 
   const [username, setUsername] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
@@ -503,11 +534,14 @@ export default function HomePage() {
     return () => unsubscribe();
   }, []);
 
-  // Scroll to bottom whenever messages list changes
+  // Scroll to bottom whenever messages list changes or visual viewport changes (keyboard toggle)
   useEffect(() => {
     if (isVideotronMode) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isVideotronMode]);
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [messages, isVideotronMode, visualViewportHeight]);
 
   // 4. Real-time Chat & Filter Enabled State Subscription
   useEffect(() => {
@@ -816,8 +850,15 @@ export default function HomePage() {
     );
   }
 
+  const mainStyle = typeof window !== 'undefined' && window.innerWidth < 768 && visualViewportHeight
+    ? { height: `${visualViewportHeight}px` }
+    : {};
+
   return (
-    <main className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 md:p-6 overflow-hidden">
+    <main 
+      style={mainStyle}
+      className="relative z-10 flex flex-col items-center justify-center min-h-screen md:min-h-screen p-0 md:p-6 overflow-hidden w-full"
+    >
       {/* Downloading Data Loader Overlay */}
       <AnimatePresence>
         {isAssetDownloading && (
@@ -970,7 +1011,7 @@ export default function HomePage() {
                           value={phoneInput}
                           onChange={(e) => setPhoneInput(e.target.value)}
                           maxLength={15}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
                       </div>
                       <p className="text-[10px] text-gray-400 mt-2 ml-1 leading-tight">
@@ -1003,7 +1044,7 @@ export default function HomePage() {
                           value={nameInput}
                           onChange={(e) => setNameInput(e.target.value)}
                           maxLength={30}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-base md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
                         />
                       </div>
                     </motion.div>
@@ -1073,7 +1114,7 @@ export default function HomePage() {
             className={`w-full flex flex-col overflow-hidden relative transition-all duration-300 ${
               isVideotronMode 
                 ? 'fixed inset-0 w-screen h-screen z-40 bg-slate-950 text-white rounded-none border-none' 
-                : 'max-w-2xl h-[85vh] glass-panel'
+                : 'max-w-2xl h-full md:h-[85vh] glass-panel rounded-none md:rounded-[32px]'
             }`}
           >
             {/* Main Header */}
@@ -1249,7 +1290,7 @@ export default function HomePage() {
                               <textarea
                                 value={editingMessageContent}
                                 onChange={(e) => setEditingMessageContent(e.target.value)}
-                                className="w-full text-sm text-gray-900 border-none focus:outline-none focus:ring-0 resize-none rounded-lg bg-gray-50 p-2"
+                                className="w-full text-base md:text-sm text-gray-900 border-none focus:outline-none focus:ring-0 resize-none rounded-lg bg-gray-50 p-2"
                                 rows={3}
                                 maxLength={1000}
                                 autoFocus
@@ -1357,7 +1398,7 @@ export default function HomePage() {
                     className={`flex-1 rounded-xl transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
                       isVideotronMode 
                         ? 'px-6 py-3.5 bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-base' 
-                        : 'px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 text-sm'
+                        : 'px-4 py-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 text-base md:text-sm'
                     }`}
                   />
                   <button
