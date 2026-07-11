@@ -131,26 +131,32 @@ export default function HomePage() {
   const [downloadStatus, setDownloadStatus] = useState<string>('Menyiapkan koneksi aman...');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   
-  const [viewportHeight, setViewportHeight] = useState('100dvh');
-
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const handleViewportChange = () => {
-      if (window.innerWidth < 768) {
-        setViewportHeight(`${window.visualViewport!.height}px`);
-      } else {
-        setViewportHeight('100dvh');
+      if (window.innerWidth < 768 && mainRef.current) {
+        // Use direct DOM manipulation for smooth 60fps tracking without React re-render lag
+        mainRef.current.style.height = `${window.visualViewport!.height}px`;
+        mainRef.current.style.top = `${window.visualViewport!.offsetTop}px`;
+      } else if (mainRef.current) {
+        mainRef.current.style.height = '100dvh';
+        mainRef.current.style.top = '0px';
       }
     };
 
     window.visualViewport.addEventListener('resize', handleViewportChange);
+    window.visualViewport.addEventListener('scroll', handleViewportChange);
+    
+    // Initial setup
     handleViewportChange();
 
     return () => {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
       }
     };
   }, []);
@@ -845,7 +851,8 @@ export default function HomePage() {
 
   return (
     <main 
-      style={isMobile ? { height: viewportHeight } : {}}
+      ref={mainRef}
+      style={{ height: '100dvh' }}
       className={`z-10 flex flex-col items-center justify-center p-0 md:p-6 overflow-hidden w-full bg-slate-50 md:bg-transparent ${
         isMobile ? 'fixed inset-x-0 top-0' : 'relative min-h-screen'
       }`}
