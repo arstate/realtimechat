@@ -91,16 +91,36 @@ export default function HomePage() {
       } else {
         setVisualViewportHeight(window.innerHeight);
       }
+      
+      // Keep scroll state reset to zero on viewport resize/scroll
+      if (window.innerWidth < 768) {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }
     };
 
     updateViewport();
     
+    const handleScrollReset = () => {
+      if (window.innerWidth < 768) {
+        if (window.scrollY !== 0) {
+          window.scrollTo(0, 0);
+        }
+        if (window.visualViewport && window.visualViewport.offsetTop !== 0) {
+          window.scrollTo(0, 0);
+        }
+      }
+    };
+
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateViewport);
       window.visualViewport.addEventListener('scroll', updateViewport);
     } else {
       window.addEventListener('resize', updateViewport);
     }
+
+    window.addEventListener('scroll', handleScrollReset, { passive: true });
 
     return () => {
       if (window.visualViewport) {
@@ -109,16 +129,20 @@ export default function HomePage() {
       } else {
         window.removeEventListener('resize', updateViewport);
       }
+      window.removeEventListener('scroll', handleScrollReset);
     };
   }, []);
 
   const handleInputFocus = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }, 80);
+      // Run multiple times as keyboard opens to battle native browser scrolling
+      [30, 80, 150, 300, 500].forEach((delay) => {
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }, delay);
+      });
     }
   };
 
@@ -867,10 +891,14 @@ export default function HomePage() {
       }
     : {};
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
     <main 
       style={mainStyle}
-      className="relative z-10 flex flex-col items-center justify-center min-h-screen md:min-h-screen p-0 md:p-6 overflow-hidden w-full"
+      className={`relative z-10 flex flex-col items-center justify-center p-0 md:p-6 overflow-hidden w-full ${
+        isMobile ? 'h-full min-h-0' : 'min-h-screen md:min-h-screen'
+      }`}
     >
       {/* Downloading Data Loader Overlay */}
       <AnimatePresence>
